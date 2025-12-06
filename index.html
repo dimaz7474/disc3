@@ -459,23 +459,69 @@
             line-height: 1.4;
         }
         
-        /* Bagian Teknologi (diperbarui) */
-        .tech-stack {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
+        /* Bagian Desain Eksperimen */
+        .experiment-design {
             margin-top: 15px;
         }
         
-        .tech-tag {
-            background: rgba(58, 86, 199, 0.5);
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            color: #e0e7ff;
+        .experiment-section {
+            margin-bottom: 20px;
+        }
+        
+        .experiment-title {
+            font-size: 17px;
+            color: #4a9fff;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+        
+        .experiment-list {
+            padding-left: 25px;
+            margin-bottom: 15px;
+        }
+        
+        .experiment-item {
+            margin-bottom: 8px;
+            color: #e0e7ff;
+            font-size: 14px;
+            line-height: 1.5;
+            position: relative;
+        }
+        
+        .experiment-item::before {
+            content: "•";
+            color: #6bff7a;
+            position: absolute;
+            left: -15px;
+            font-size: 18px;
+        }
+        
+        .experiment-code {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            border-left: 3px solid #ff7f50;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        
+        .experiment-highlight {
+            background: rgba(107, 255, 122, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 3px solid #6bff7a;
+        }
+        
+        .highlight-text {
+            color: #6bff7a;
+            font-weight: bold;
+            font-size: 14px;
         }
         
         .stats {
@@ -644,8 +690,8 @@
                         </div>
                         <div class="description">
                             OpenMP adalah sebuah API yang mendukung pemrograman paralel berbasis shared-memory pada bahasa C/C++ dan Fortran. OpenMP adalah akronim untuk Open Multi-Processing. Merupakan Antarmuka Pemrograman Aplikasi (API) berbasis arahan untuk mengembangkan program paralel pada arsitektur memori bersama. Standar OpenMP dikelola oleh OpenMP ARB, sebuah perusahaan yang dewan direksinya terdiri dari perwakilan dari berbagai vendor perangkat keras dan perangkat lunak komputer terkemuka.
-                        <br><a href="https://cvw.cac.cornell.edu/openmp/intro/what-is-openmp?" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
-						</div>
+                       \ <br><a href="https://cvw.cac.cornell.edu/openmp/intro/what-is-openmp?" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
+					   </div>
                     </div>
                     
                     <div class="info-box">
@@ -679,9 +725,10 @@
                             </div>
                             <div class="image-caption">
                                 <div class="caption-title">OpenMP API</div>
-                                <div class="caption-subtitle">Aplikasi Programming Interface pemrograman paralel berbasis shared-memory pada C/C++ dan Fortran</div>
+                                <div class="caption-subtitle"> <a href="https://media.neliti.com/media/publications/473066-implementation-of-parallel-programming-i-96191966.pdf"target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
+                                </div>
                                 <div class="caption-description">
-                                    <a href="https://media.neliti.com/media/publications/473066-implementation-of-parallel-programming-i-96191966.pdf"target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
+                                    Application Programming Interface untuk pemrograman paralel berbasis shared-memory pada C/C++ dan Fortran
                                 </div>
                             </div>
                         </div>
@@ -692,7 +739,7 @@
                             <i class="fas fa-cogs"></i> Cara Kerja OpenMP
                         </div>
                         <div class="description">
-                            OpenMP bekerja dengan 3 konsep utama: 
+                            OpenMP bekerja dengan 3 konsep utama:
                             <div class="concept-list">
                                 <div class="concept-item">
                                     <strong>1️⃣ Compiler Directives</strong><br>
@@ -708,9 +755,10 @@
                                 </div>
                             </div>
                         </div>
-						<a href="https://hpc-tutorials.llnl.gov/openmp/api_overview/" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
+
+                   	<a href="https://hpc-tutorials.llnl.gov/openmp/api_overview/" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
                     </div>
-                      
+                    
                     <div class="info-box">
                         <div class="info-title">
                             <i class="fas fa-sitemap"></i> Konsep Dasar OpenMP yang Diterapkan
@@ -725,7 +773,7 @@
                                     &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// kode paralel</span><br>
                                     }
                                 </div>
-								<a href="https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/2023-0/worksharing-using-openmp.html?" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
+                            	<a href="https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/2023-0/worksharing-using-openmp.html?" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
                             </div>
                             
                             <div class="concept-item">
@@ -737,7 +785,7 @@
                                     &nbsp;&nbsp;&nbsp;&nbsp;sum += data[i];<br>
                                     }
                                 </div>
-								<a href="https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/2023-0/worksharing-using-openmp.html" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
+                            	<a href="https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/2023-0/worksharing-using-openmp.html" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
                             </div>
                             
                             <div class="concept-item">
@@ -745,7 +793,7 @@
                                 • <strong>Shared Memory:</strong> Variabel yang dideklarasikan di luar region paralel dapat diakses oleh semua thread.<br>
                                 • <strong>Private Memory:</strong> Variabel yang dideklarasikan dalam thread bersifat privat.
                             </div>
-                            <a href="https://www.openmp.org/spec-html/5.0/openmpsu9.html" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
+                             <a href="https://www.openmp.org/spec-html/5.0/openmpsu9.html" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
                             <div class="concept-item">
                                 <strong>d. False Sharing & Cara Menghindarinya</strong><br>
                                 False sharing terjadi ketika thread-thread yang berbeda mengakses variabel yang berbeda tetapi berada dalam cache line yang sama, menyebabkan penurunan kinerja.<br><br>
@@ -809,20 +857,20 @@
                 </div>
                 
                 <div class="link-container">
-                    <a href="open-mp.html" target="_blank" class="main-link">
+                    <a href="open-mp.html" class="main-link">
                         <i class="fas fa-rocket"></i> Buka Visualisasi OpenMP
                     </a>
                 </div>
             </div>
             
             <div class="sidebar">
-                <!-- Box Teknologi diganti dengan Logo Kampus -->
+                <!-- Box Logo Kampus -->
                 <div class="sidebar-box">
                     <div class="section-title">
                         <i class="fas fa-university"></i> Institusi
                     </div>
                     <div class="description">
-                      
+                        
                     </div>
                     <div class="university-logo-container">
                         <img src="cakrwala-university.jpeg" alt="Logo Cakrwala University" class="university-logo">
@@ -833,6 +881,7 @@
                     </div>
                 </div>
                 
+                <!-- Box Statistik -->
                 <div class="sidebar-box">
                     <div class="section-title">
                         <i class="fas fa-chart-bar"></i> Statistik
@@ -857,30 +906,63 @@
                     </div>
                 </div>
                 
+                <!-- Box Desain Eksperimen (menggantikan Shortcut Keyboard) -->
                 <div class="sidebar-box">
                     <div class="section-title">
-                        <i class="fas fa-keyboard"></i> Shortcut Keyboard
+                        <i class="fas fa-flask"></i> Desain Eksperimen
                     </div>
-                    <div class="keyboard-shortcuts">
-                        <div class="shortcut">
-                            <div class="key">Space</div>
-                            <div class="action">Mulai/Jeda Visualisasi</div>
+                    <div class="experiment-design">
+                        <div class="experiment-section">
+                            <div class="experiment-title">
+                                <i class="fas fa-database"></i> Data
+                            </div>
+                            <div class="experiment-list">
+                                <div class="experiment-item">Array dengan 1.000.000 elemen angka acak</div>
+                                <div class="experiment-item">Nilai acak: 0-99 (rand() % 100)</div>
+                                <div class="experiment-item">Pengukuran waktu dengan averaging (5x pengulangan)</div>
+                            </div>
                         </div>
-                        <div class="shortcut">
-                            <div class="key">→</div>
-                            <div class="action">Langkah Berikutnya</div>
+                        
+                        <div class="experiment-section">
+                            <div class="experiment-title">
+                                <i class="fas fa-code"></i> Implementasi
+                            </div>
+                            <div class="experiment-list">
+                                <div class="experiment-item">Sequential Sum: Menjumlahkan dengan loop tunggal</div>
+                                <div class="experiment-item">OpenMP Reduction: Menggunakan #pragma omp parallel for reduction(+:sum)</div>
+                                <div class="experiment-item">Pengukuran waktu eksekusi dengan omp_get_wtime()</div>
+                            </div>
                         </div>
-                        <div class="shortcut">
-                            <div class="key">R</div>
-                            <div class="action">Reset Visualisasi</div>
+                        
+                        <div class="experiment-section">
+                            <div class="experiment-title">
+                                <i class="fas fa-sliders-h"></i> Variasi Konfigurasi
+                            </div>
+                            <div class="experiment-list">
+                                <div class="experiment-item">Variasi jumlah thread: 1, 2, 4, 8, 16</div>
+                                <div class="experiment-item">Perbandingan Sequential vs Parallel</div>
+                                <div class="experiment-item">Perhitungan speedup dan efisiensi</div>
+                            </div>
                         </div>
-                        <div class="shortcut">
-                            <div class="key">1-6</div>
-                            <div class="action">Ganti Halaman</div>
+                        
+                        <div class="experiment-section">
+                            <div class="experiment-title">
+                                <i class="fas fa-file-code"></i> Kode Implementasi (Singkat)
+                            </div>
+                            <div class="experiment-code">
+                                <span class="code-keyword">#pragma omp parallel for reduction(+:sum)</span><br>
+                                for(int i = 0; i < n; i++) {<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;sum += data[i];<br>
+                                }
+                            </div>
+                            <div class="experiment-highlight">
+                                <span class="highlight-text">Fungsi Utama:</span> omp_get_wtime() untuk pengukuran waktu, srand(time(NULL)) untuk random seed
+                            </div>
                         </div>
                     </div>
                 </div>
                 
+                <!-- Box Referensi -->
                 <div class="sidebar-box">
                     <div class="section-title">
                         <i class="fas fa-book"></i> Referensi
@@ -917,7 +999,7 @@
             </p>
             
             <div class="footer-links">
-                <a href="open-mp.html" class="footer-link" target="_blank">Buka Visualisasi</a>
+                <a href="open-mp.html" target="_blank" class="footer-link" target="_blank">Buka Visualisasi</a>
                 <a href="https://www.openmp.org/" target="_blank" class="footer-link">Situs OpenMP</a>
                 <a href="https://dimaz7474.github.io/disc3/" target="_blank" class="footer-link">GitHub Repository</a>
             </div>
@@ -1034,6 +1116,21 @@
                     `);
                 };
             }
+            
+            // Animasi untuk item desain eksperimen
+            const experimentItems = document.querySelectorAll('.experiment-item');
+            experimentItems.forEach((item, index) => {
+                setTimeout(() => {
+                    item.style.opacity = '0';
+                    item.style.transform = 'translateX(-10px)';
+                    
+                    setTimeout(() => {
+                        item.style.transition = 'opacity 0.5s, transform 0.5s';
+                        item.style.opacity = '1';
+                        item.style.transform = 'translateX(0)';
+                    }, 100);
+                }, index * 100);
+            });
         });
     </script>
 </body>
