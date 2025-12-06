@@ -1,0 +1,3759 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parallel Sum Reduction - OpenMP dengan Log Langkah & Benchmark Dinamis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f1b3d, #1a2a6c, #2a3c7f);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+        
+        .slide-container {
+            width: 1400px;
+            min-height: 950px;
+            background-color: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .slide {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .slide.active {
+            display: flex;
+        }
+        
+        .slide-header {
+            background: linear-gradient(90deg, #2a3c7f, #3a56c7);
+            padding: 25px 40px;
+            border-bottom: 3px solid #4a5fb8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left h1 {
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header-left h1 i {
+            color: #ffd166;
+        }
+        
+        .header-left h2 {
+            font-size: 20px;
+            font-weight: 400;
+            color: #e0e7ff;
+        }
+        
+        .header-right {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .progress-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .progress-label {
+            font-size: 16px;
+            color: #a3b7ff;
+        }
+        
+        .progress-bar {
+            width: 250px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6bff7a, #4cd964);
+            width: 0%;
+            transition: width 0.5s;
+        }
+        
+        .slide-content {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 25px;
+            overflow: visible;
+        }
+        
+        .left-panel {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .panel-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .section-title {
+            font-size: 22px;
+            color: #a3b7ff;
+            border-bottom: 2px solid #4a5fb8;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .section-title i {
+            color: #ffd166;
+        }
+        
+        /* Data visualization */
+        .data-visualization {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 300px;
+        }
+        
+        .data-array-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+            flex: 1;
+            align-content: flex-start;
+            min-height: 200px;
+        }
+        
+        .data-item {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #3a56c7, #2a3c7f);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .data-item.active {
+            background: linear-gradient(135deg, #ff9e6d, #ff7f50);
+            transform: scale(1.15);
+            box-shadow: 0 0 25px rgba(255, 126, 80, 0.9);
+            z-index: 10;
+        }
+        
+        .data-item.processed {
+            background: linear-gradient(135deg, #6bff7a, #4cd964);
+            transform: scale(1.05);
+        }
+        
+        .data-item.thread-0 { border: 2px solid #ff7f50; }
+        .data-item.thread-1 { border: 2px solid #6bff7a; }
+        .data-item.thread-2 { border: 2px solid #4a9fff; }
+        .data-item.thread-3 { border: 2px solid #ffd166; }
+        .data-item.thread-4 { border: 2px solid #ff6b6b; }
+        .data-item.thread-5 { border: 2px solid #9d4edd; }
+        .data-item.thread-6 { border: 2px solid #4cc9f0; }
+        .data-item.thread-7 { border: 2px solid #f72585; }
+        .data-item.thread-8 { border: 2px solid #90be6d; }
+        .data-item.thread-9 { border: 2px solid #f9c74f; }
+        .data-item.thread-10 { border: 2px solid #43aa8b; }
+        .data-item.thread-11 { border: 2px solid #f8961e; }
+        .data-item.thread-12 { border: 2px solid #577590; }
+        .data-item.thread-13 { border: 2px solid #f3722c; }
+        .data-item.thread-14 { border: 2px solid #277da1; }
+        .data-item.thread-15 { border: 2px solid #f9844a; }
+        
+        .data-item::after {
+            content: attr(data-thread);
+            position: absolute;
+            top: -22px;
+            font-size: 12px;
+            color: #a3b7ff;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .data-item:hover::after {
+            opacity: 1;
+        }
+        
+        /* Thread containers */
+        .threads-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .thread-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .thread-box.active {
+            border-color: #ff7f50;
+            background: rgba(255, 126, 80, 0.1);
+            box-shadow: 0 0 25px rgba(255, 126, 80, 0.4);
+        }
+        
+        .thread-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .thread-title {
+            font-size: 18px;
+            color: #a3b7ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .thread-id {
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+        
+        .thread-sum {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffd166;
+            text-align: center;
+            margin: auto;
+            transition: all 0.3s;
+        }
+        
+        .thread-sum.updated {
+            transform: scale(1.4);
+            color: #6bff7a;
+        }
+        
+        /* Log panel */
+        .log-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+        }
+        
+        .log-container {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 350px;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid transparent;
+            animation: fadeIn 0.5s;
+            flex-shrink: 0;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .log-entry.info { border-left-color: #4a9fff; }
+        .log-entry.success { border-left-color: #6bff7a; }
+        .log-entry.warning { border-left-color: #ffd166; }
+        .log-entry.error { border-left-color: #ff6b6b; }
+        
+        .log-time {
+            font-size: 12px;
+            color: #a3b7ff;
+            margin-right: 12px;
+        }
+        
+        .log-message {
+            color: white;
+        }
+        
+        /* Code panel */
+        .code-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border-left: 4px solid #ff7f50;
+            position: relative;
+            height: 400px;
+            overflow-y: auto;
+        }
+        
+        .code-line {
+            margin-bottom: 6px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            transition: all 0.3s;
+            position: relative;
+            white-space: nowrap;
+        }
+        
+        .code-line.highlight {
+            background: rgba(255, 209, 102, 0.15);
+            color: #ffd166;
+            border-left: 3px solid #ffd166;
+            padding-left: 15px;
+        }
+        
+        .code-line-number {
+            display: inline-block;
+            width: 30px;
+            color: #a3b7ff;
+            font-size: 13px;
+            margin-right: 15px;
+        }
+        
+        /* Explanation Panel */
+        .explanation-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            line-height: 1.7;
+            border-left: 4px solid #4a9fff;
+            height: 400px;
+            overflow-y: auto;
+        }
+        
+        .explanation-section {
+            margin-bottom: 25px;
+        }
+        
+        .explanation-title {
+            font-size: 18px;
+            color: #ffd166;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .explanation-content {
+            color: #e0e7ff;
+            font-size: 15px;
+            padding-left: 10px;
+        }
+        
+        .explanation-point {
+            margin: 8px 0;
+            padding-left: 15px;
+            position: relative;
+        }
+        
+        .explanation-point::before {
+            content: "▸";
+            color: #6bff7a;
+            position: absolute;
+            left: 0;
+        }
+        
+        .code-keyword {
+            color: #ff7f50;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .code-comment {
+            color: #a3b7ff;
+            font-style: italic;
+        }
+        
+        .code-pragma {
+            color: #ffd166;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .highlight-box {
+            background: rgba(255, 209, 102, 0.1);
+            border: 1px solid rgba(255, 209, 102, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        /* Controls */
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .control-btn {
+            background: linear-gradient(90deg, #3a56c7, #2a3c7f);
+            border: none;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            min-width: 160px;
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(90deg, #4a5fb8, #3a56c7);
+        }
+        
+        .control-btn:active {
+            transform: translateY(0);
+        }
+        
+        .control-btn.primary {
+            background: linear-gradient(90deg, #6bff7a, #4cd964);
+        }
+        
+        .control-btn.secondary {
+            background: linear-gradient(90deg, #ff9e6d, #ff7f50);
+        }
+        
+        .control-btn.warning {
+            background: linear-gradient(90deg, #ffd166, #ffb347);
+        }
+        
+        .control-btn.danger {
+            background: linear-gradient(90deg, #ff6b6b, #ff4757);
+        }
+        
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .speedup-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        
+        .speedup-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #6bff7a;
+            text-shadow: 0 0 15px rgba(107, 255, 122, 0.6);
+        }
+        
+        .speedup-label {
+            font-size: 16px;
+            color: #a3b7ff;
+        }
+        
+        .time-display {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 15px;
+            color: #a3b7ff;
+        }
+        
+        /* Timer and auto controls */
+        .auto-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .speed-label {
+            font-size: 16px;
+            color: #a3b7ff;
+        }
+        
+        .speed-slider {
+            width: 150px;
+        }
+        
+        .timer-display {
+            font-size: 16px;
+            color: #ffd166;
+            background: rgba(255, 209, 102, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+        
+        /* Status bar */
+        .status-bar {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .current-step {
+            font-size: 18px;
+            color: #ffd166;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .step-indicator {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .step-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+        }
+        
+        .step-dot.active {
+            background: #6bff7a;
+            box-shadow: 0 0 12px #6bff7a;
+        }
+        
+        .step-dot.completed {
+            background: #4a9fff;
+        }
+        
+        /* Benchmark Slide Styles */
+        .benchmark-content {
+            display: flex;
+            flex: 1;
+            padding: 30px;
+            gap: 40px;
+            flex-direction: column;
+        }
+        
+        .benchmark-table-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .benchmark-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .benchmark-table th {
+            background: rgba(58, 86, 199, 0.5);
+            padding: 18px;
+            text-align: left;
+            font-size: 18px;
+            color: #ffd166;
+            border-bottom: 2px solid #4a5fb8;
+        }
+        
+        .benchmark-table td {
+            padding: 15px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 16px;
+        }
+        
+        .benchmark-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .benchmark-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .thread-count {
+            font-weight: bold;
+            color: #4a9fff;
+        }
+        
+        .time-cell {
+            color: #6bff7a;
+        }
+        
+        .speedup-cell {
+            font-weight: bold;
+            color: #ffd166;
+        }
+        
+        .benchmark-chart-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chart {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+            min-height: 500px;
+        }
+        
+        .chart-graph {
+            height: 400px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            margin-top: 50px;
+        }
+        
+        .chart-bar {
+            flex: 1;
+            margin: 0 15px;
+            background: linear-gradient(to top, #3a56c7, #4a9fff);
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            transition: height 1.5s ease;
+            height: 0;
+        }
+        
+        .chart-bar.active {
+            background: linear-gradient(to top, #6bff7a, #4cd964);
+        }
+        
+        .chart-bar-label {
+            position: absolute;
+            bottom: -35px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #a3b7ff;
+            font-size: 16px;
+        }
+        
+        .chart-bar-value {
+            position: absolute;
+            top: -35px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .chart-axis-y {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 50px;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 15px 0;
+        }
+        
+        .y-tick {
+            color: #a3b7ff;
+            font-size: 14px;
+            text-align: right;
+            padding-right: 8px;
+        }
+        
+        .chart-title {
+            text-align: center;
+            color: #ffd166;
+            margin-bottom: 25px;
+            font-size: 20px;
+        }
+        
+        .ideal-line {
+            position: absolute;
+            top: 0;
+            left: 60px;
+            right: 25px;
+            height: 1px;
+            border-top: 2px dashed rgba(255, 209, 102, 0.5);
+            pointer-events: none;
+        }
+        
+        /* Configuration Panel */
+        .config-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+        
+        .config-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .config-label {
+            font-size: 15px;
+            color: #a3b7ff;
+        }
+        
+        .config-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #4a5fb8;
+            border-radius: 8px;
+            color: white;
+            padding: 8px 12px;
+            width: 120px;
+            text-align: center;
+        }
+        
+        /* Navigation buttons */
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-btn {
+            background: linear-gradient(90deg, #2a3c7f, #3a56c7);
+            border: none;
+            color: white;
+            padding: 15px 35px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            min-width: 200px;
+        }
+        
+        .nav-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(90deg, #3a56c7, #4a5fb8);
+        }
+        
+        .nav-btn.primary {
+            background: linear-gradient(90deg, #6bff7a, #4cd964);
+        }
+        
+        .nav-btn.warning {
+            background: linear-gradient(90deg, #ffd166, #ffb347);
+        }
+        
+        .nav-btn.danger {
+            background: linear-gradient(90deg, #ff6b6b, #ff4757);
+        }
+        
+        /* Slide navigation dots */
+        .slide-nav {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            padding: 10px;
+        }
+        
+        .slide-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .slide-dot.active {
+            background: #6bff7a;
+            transform: scale(1.3);
+            box-shadow: 0 0 12px #6bff7a;
+        }
+        
+        /* Analysis Slide Styles */
+        .analysis-metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border-left: 3px solid transparent;
+        }
+        
+        .analysis-metric.good {
+            border-left-color: #6bff7a;
+            background: rgba(107, 255, 122, 0.05);
+        }
+        
+        .analysis-metric.warning {
+            border-left-color: #ffd166;
+            background: rgba(255, 209, 102, 0.05);
+        }
+        
+        .analysis-metric.poor {
+            border-left-color: #ff7f50;
+            background: rgba(255, 126, 80, 0.05);
+        }
+        
+        .metric-label {
+            color: #a3b7ff;
+            font-size: 14px;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .thread-comparison {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .thread-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .thread-card.best {
+            border-color: #6bff7a;
+            background: rgba(107, 255, 122, 0.1);
+        }
+        
+        .thread-card.worst {
+            border-color: #ff7f50;
+            background: rgba(255, 126, 80, 0.1);
+        }
+        
+        .thread-count-card {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd166;
+            margin-bottom: 5px;
+        }
+        
+        .thread-performance {
+            font-size: 14px;
+            color: #a3b7ff;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1450px) {
+            .slide-container {
+                width: 95%;
+                height: auto;
+                min-height: 950px;
+            }
+            
+            .slide-content {
+                flex-direction: column;
+            }
+            
+            .benchmark-content {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Slide 1: Visualisasi OpenMP -->
+    <div class="slide active" id="slide1">
+        <div class="slide-header">
+            <div class="header-left">
+                <h1><i class="fas fa-microchip"></i> Visualisasi Parallel Sum Reduction dengan OpenMP</h1>
+                <h2>Simulasi Langkah-demi-Langkah dengan Kontrol Manual & Otomatis</h2>
+            </div>
+            <div class="header-right">
+                <div class="progress-container">
+                    <div class="progress-label">Progress Eksekusi</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide-content">
+            <div class="left-panel">
+                <div class="panel-section data-visualization">
+                    <div class="section-title">
+                        <i class="fas fa-chart-bar"></i> Visualisasi Data & Threads<br>unit eksekusi paralel yang mensimulasikan cara OpenMP membagi pekerjaan.
+                    </div>
+                    
+                    <div class="data-array-container" id="dataArray">
+                        <!-- Data akan di-generate oleh JavaScript -->
+                    </div>
+                    
+                    <div class="threads-container" id="threadsContainer">
+                        <!-- Thread boxes akan di-generate oleh JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="panel-section">
+                    <div class="section-title">
+                        <i class="fas fa-code"></i> Kode Program OpenMP (Implementasi Asli)
+                    </div>
+                    <div class="code-container">
+                        <div class="code-line" id="codeLine1"><span class="code-line-number">1</span>#include &lt;omp.h&gt;</div>
+                        <div class="code-line" id="codeLine2"><span class="code-line-number">2</span>#include &lt;stdio.h&gt;</div>
+                        <div class="code-line" id="codeLine3"><span class="code-line-number">3</span>#include &lt;stdlib.h&gt;</div>
+                        <div class="code-line" id="codeLine4"><span class="code-line-number">4</span>#include &lt;time.h&gt;</div>
+                        <div class="code-line" id="codeLine5"><span class="code-line-number">5</span></div>
+                        <div class="code-line" id="codeLine6"><span class="code-line-number">6</span>#define N 1000000          <span class="code-comment">// ukuran array</span></div>
+                        <div class="code-line" id="codeLine7"><span class="code-line-number">7</span>#define REPEAT 5           <span class="code-comment">// jumlah pengulangan untuk averaging</span></div>
+                        <div class="code-line" id="codeLine8"><span class="code-line-number">8</span></div>
+                        <div class="code-line" id="codeLine9"><span class="code-line-number">9</span>int main() {</div>
+                        <div class="code-line" id="codeLine10"><span class="code-line-number">10</span>    int *data = (int*) malloc(N * sizeof(int));</div>
+                        <div class="code-line" id="codeLine11"><span class="code-line-number">11</span>    long long sum_seq = 0;</div>
+                        <div class="code-line" id="codeLine12"><span class="code-line-number">12</span></div>
+                        <div class="code-line highlight" id="codeLine13"><span class="code-line-number">13</span>    srand(time(NULL));     <span class="code-comment">// random seed berbeda setiap eksekusi</span></div>
+                        <div class="code-line" id="codeLine14"><span class="code-line-number">14</span></div>
+                        <div class="code-line" id="codeLine15"><span class="code-line-number">15</span>    <span class="code-comment">// Inisialisasi data</span></div>
+                        <div class="code-line" id="codeLine16"><span class="code-line-number">16</span>    for (int i = 0; i &lt; N; i++) {</div>
+                        <div class="code-line" id="codeLine17"><span class="code-line-number">17</span>        data[i] = rand() % 100;</div>
+                        <div class="code-line" id="codeLine18"><span class="code-line-number">18</span>    }</div>
+                        <div class="code-line" id="codeLine19"><span class="code-line-number">19</span></div>
+                        <div class="code-line" id="codeLine20"><span class="code-line-number">20</span>    <span class="code-comment">// ==============================</span></div>
+                        <div class="code-line" id="codeLine21"><span class="code-line-number">21</span>    <span class="code-comment">//   PERHITUNGAN SEQUENTIAL</span></div>
+                        <div class="code-line" id="codeLine22"><span class="code-line-number">22</span>    <span class="code-comment">// ==============================</span></div>
+                        <div class="code-line" id="codeLine23"><span class="code-line-number">23</span>    double time_seq_total = 0;</div>
+                        <div class="code-line" id="codeLine24"><span class="code-line-number">24</span></div>
+                        <div class="code-line" id="codeLine25"><span class="code-line-number">25</span>    for (int r = 0; r &lt; REPEAT; r++) {</div>
+                        <div class="code-line" id="codeLine26"><span class="code-line-number">26</span>        sum_seq = 0;</div>
+                        <div class="code-line highlight" id="codeLine27"><span class="code-line-number">27</span>        double start = omp_get_wtime();</div>
+                        <div class="code-line" id="codeLine28"><span class="code-line-number">28</span></div>
+                        <div class="code-line" id="codeLine29"><span class="code-line-number">29</span>        for (int i = 0; i &lt; N; i++) {</div>
+                        <div class="code-line" id="codeLine30"><span class="code-line-number">30</span>            sum_seq += data[i];</div>
+                        <div class="code-line" id="codeLine31"><span class="code-line-number">31</span>        }</div>
+                        <div class="code-line" id="codeLine32"><span class="code-line-number">32</span></div>
+                        <div class="code-line" id="codeLine33"><span class="code-line-number">33</span>        time_seq_total += (omp_get_wtime() - start);</div>
+                        <div class="code-line" id="codeLine34"><span class="code-line-number">34</span>    }</div>
+                        <div class="code-line" id="codeLine35"><span class="code-line-number">35</span></div>
+                        <div class="code-line" id="codeLine36"><span class="code-line-number">36</span>    double time_seq = time_seq_total / REPEAT;</div>
+                        <div class="code-line" id="codeLine37"><span class="code-line-number">37</span></div>
+                        <div class="code-line highlight" id="codeLine38"><span class="code-line-number">38</span>    <span class="code-comment">// ==============================</span></div>
+                        <div class="code-line highlight" id="codeLine39"><span class="code-line-number">39</span>    <span class="code-comment">//   PERHITUNGAN PARALLEL</span></div>
+                        <div class="code-line highlight" id="codeLine40"><span class="code-line-number">40</span>    <span class="code-comment">// ==============================</span></div>
+                        <div class="code-line highlight" id="codeLine41"><span class="code-line-number">41</span>    double time_par_total = 0;</div>
+                        <div class="code-line highlight" id="codeLine42"><span class="code-line-number">42</span>    long long sum_par = 0;</div>
+                        <div class="code-line highlight" id="codeLine43"><span class="code-line-number">43</span></div>
+                        <div class="code-line highlight" id="codeLine44"><span class="code-line-number">44</span>    for (int r = 0; r &lt; REPEAT; r++) {</div>
+                        <div class="code-line highlight" id="codeLine45"><span class="code-line-number">45</span>        sum_par = 0;</div>
+                        <div class="code-line highlight" id="codeLine46"><span class="code-line-number">46</span>        double start = omp_get_wtime();</div>
+                        <div class="code-line highlight" id="codeLine47"><span class="code-line-number">47</span></div>
+                        <div class="code-line highlight" id="codeLine48"><span class="code-line-number">48</span>        #pragma omp parallel for reduction(+:sum_par)</div>
+                        <div class="code-line highlight" id="codeLine49"><span class="code-line-number">49</span>        for (int i = 0; i &lt; N; i++) {</div>
+                        <div class="code-line highlight" id="codeLine50"><span class="code-line-number">50</span>            sum_par += data[i];</div>
+                        <div class="code-line highlight" id="codeLine51"><span class="code-line-number">51</span>        }</div>
+                        <div class="code-line highlight" id="codeLine52"><span class="code-line-number">52</span></div>
+                        <div class="code-line highlight" id="codeLine53"><span class="code-line-number">53</span>        time_par_total += (omp_get_wtime() - start);</div>
+                        <div class="code-line highlight" id="codeLine54"><span class="code-line-number">54</span>    }</div>
+                        <div class="code-line" id="codeLine55"><span class="code-line-number">55</span></div>
+                        <div class="code-line" id="codeLine56"><span class="code-line-number">56</span>    double time_par = time_par_total / REPEAT;</div>
+                        <div class="code-line" id="codeLine57"><span class="code-line-number">57</span></div>
+                        <div class="code-line" id="codeLine58"><span class="code-line-number">58</span>    printf("========================================\n");</div>
+                        <div class="code-line" id="codeLine59"><span class="code-line-number">59</span>    printf("        HASIL BENCHMARK OPENMP\n");</div>
+                        <div class="code-line" id="codeLine60"><span class="code-line-number">60</span>    printf("========================================\n");</div>
+                        <div class="code-line" id="codeLine61"><span class="code-line-number">61</span>    printf("Ukuran data: %d elemen\n", N);</div>
+                        <div class="code-line" id="codeLine62"><span class="code-line-number">62</span>    printf("Pengulangan: %d kali (averaging)\n", REPEAT);</div>
+                        <div class="code-line" id="codeLine63"><span class="code-line-number">63</span>    printf("Thread yang digunakan: %d\n", omp_get_max_threads());</div>
+                        <div class="code-line" id="codeLine64"><span class="code-line-number">64</span>    printf("\n");</div>
+                        <div class="code-line" id="codeLine65"><span class="code-line-number">65</span>    printf("Sequential:  %lld (%.4f detik)\n", sum_seq, time_seq);</div>
+                        <div class="code-line" id="codeLine66"><span class="code-line-number">66</span>    printf("Parallel:    %lld (%.4f detik)\n", sum_par, time_par);</div>
+                        <div class="code-line" id="codeLine67"><span class="code-line-number">67</span>    printf("\n");</div>
+                        <div class="code-line" id="codeLine68"><span class="code-line-number">68</span>    printf("Speedup:     %.2fx\n", time_seq / time_par);</div>
+                        <div class="code-line" id="codeLine69"><span class="code-line-number">69</span>    printf("Efisiensi:   %.1f%%\n", ((time_seq / time_par) / omp_get_max_threads()) * 100);</div>
+                        <div class="code-line" id="codeLine70"><span class="code-line-number">70</span>    printf("========================================\n");</div>
+                        <div class="code-line" id="codeLine71"><span class="code-line-number">71</span></div>
+                        <div class="code-line" id="codeLine72"><span class="code-line-number">72</span>    free(data);</div>
+                        <div class="code-line" id="codeLine73"><span class="code-line-number">73</span>    return 0;</div>
+                        <div class="code-line" id="codeLine74"><span class="code-line-number">74</span>}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="panel-section log-panel">
+                    <div class="section-title">
+                        <i class="fas fa-clipboard-list"></i> Log Eksekusi
+                    </div>
+                    <div class="log-container" id="logContainer">
+                        <!-- Log entries akan ditambahkan oleh JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="panel-section controls-container">
+                    <div class="section-title">
+                        <i class="fas fa-gamepad"></i> Kontrol Eksekusi
+                    </div>
+                    
+                    <div class="controls-row">
+                        <button class="control-btn primary" id="startBtn">
+                            <i class="fas fa-play"></i> Mulai (Auto)
+                        </button>
+                        <button class="control-btn secondary" id="pauseBtn" disabled>
+                            <i class="fas fa-pause"></i> Jeda
+                        </button>
+                        <button class="control-btn warning" id="nextStepBtn">
+                            <i class="fas fa-step-forward"></i> Langkah
+                        </button>
+                    </div>
+                    
+                    <div class="controls-row">
+                        <button class="control-btn" id="resetBtn">
+                            <i class="fas fa-redo"></i> Reset All
+                        </button>
+                        <button class="control-btn danger" id="stopBtn">
+                            <i class="fas fa-stop"></i> Berhenti
+                        </button>
+                        <button class="control-btn warning" id="explainCodeBtn">
+                            <i class="fas fa-book"></i> Jelaskan Kode
+                        </button>
+                    </div>
+                    
+                    <div class="auto-controls">
+                        <div class="speed-control">
+                            <span class="speed-label">Kecepatan:</span>
+                            <input type="range" min="1" max="10" value="5" class="speed-slider" id="speedSlider">
+                        </div>
+                        <div class="timer-display" id="timerDisplay">Waktu: 0.0s</div>
+                    </div>
+                    
+                    <div class="speedup-display">
+                        <div>
+                            <div class="speedup-label">Speedup</div>
+                            <div class="speedup-value" id="speedupValue">1.00x</div>
+                        </div>
+                        <div class="time-display">
+                            <div>Sequential: <span id="sequentialTime">0.00ms</span></div>
+                            <div>Parallel: <span id="parallelTime">0.00ms</span></div>
+                            <div>Threads: <span id="threadCount">4</span></div>
+                            <div>Pengulangan: <span id="repeatCount">5</span></div>
+                            <div>Data: <span id="dataSize">1,000,000</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Konfigurasi Dinamis -->
+                    <div class="config-panel">
+                        <div class="section-title" style="font-size: 18px; margin-bottom: 10px;">
+                            <i class="fas fa-cog"></i> Konfigurasi
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Jumlah Thread:</span>
+                            <select class="config-input" id="threadConfig">
+                                <option value="1">1 Thread</option>
+                                <option value="2">2 Threads</option>
+                                <option value="4" selected>4 Threads</option>
+                                <option value="8">8 Threads</option>
+                                <option value="16">16 Threads</option>
+                            </select>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Ukuran Data:</span>
+                            <select class="config-input" id="dataConfig">
+                                <option value="1000">1,000</option>
+                                <option value="10000">10,000</option>
+                                <option value="100000">100,000</option>
+                                <option value="1000000" selected>1,000,000</option>
+                                <option value="10000000">10,000,000</option>
+                            </select>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Jumlah Pengulangan:</span>
+                            <select class="config-input" id="repeatConfig">
+                                <option value="1">1x</option>
+                                <option value="3">3x</option>
+                                <option value="5" selected>5x</option>
+                                <option value="10">10x</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <div class="current-step">
+                <i class="fas fa-info-circle"></i>
+                <span id="currentStepText">Siap memulai eksekusi parallel sum reduction dengan OpenMP</span>
+            </div>
+            <div class="step-indicator" id="stepIndicator">
+                <!-- Step dots akan di-generate oleh JavaScript -->
+            </div>
+        </div>
+        
+        <div class="slide-nav">
+            <div class="slide-dot active" data-slide="1"></div>
+            <div class="slide-dot" data-slide="2"></div>
+            <div class="slide-dot" data-slide="3"></div>
+            <div class="slide-dot" data-slide="4"></div>
+            <div class="slide-dot" data-slide="5"></div>
+            <div class="slide-dot" data-slide="6"></div>
+        </div>
+    </div>
+    
+    <!-- Slide 2: Penjelasan Kode Program OpenMP -->
+    <div class="slide" id="slide2">
+        <div class="slide-header">
+            <div class="header-left">
+                <h1><i class="fas fa-book-open"></i> Penjelasan Kode Program OpenMP</h1>
+                <h2>Pemahaman Mendalam tentang Implementasi Parallel Sum Reduction</h2>
+            </div>
+            <div class="header-right">
+                <div class="timer-display">
+                    <i class="fas fa-code"></i> C + OpenMP
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide-content">
+            <div class="left-panel">
+                <div class="panel-section">
+                    <div class="section-title">
+                        <i class="fas fa-code"></i> Kode Lengkap Program
+                    </div>
+                    <div class="code-container" style="height: 650px;">
+                        <div class="code-line"><span class="code-line-number">1</span><span class="code-comment">// Program: Parallel Sum Reduction dengan OpenMP</span></div>
+                        <div class="code-line"><span class="code-line-number">2</span><span class="code-comment">// Deskripsi: Menghitung jumlah elemen array secara parallel dengan averaging</span></div>
+                        <div class="code-line"><span class="code-line-number">3</span></div>
+                        <div class="code-line"><span class="code-line-number">4</span>#include &lt;omp.h&gt;       <span class="code-comment">// Library OpenMP untuk parallel programming</span></div>
+                        <div class="code-line"><span class="code-line-number">5</span>#include &lt;stdio.h&gt;      <span class="code-comment">// Library standar untuk input/output</span></div>
+                        <div class="code-line"><span class="code-line-number">6</span>#include &lt;stdlib.h&gt;     <span class="code-comment">// Library untuk alokasi memori</span></div>
+                        <div class="code-line"><span class="code-line-number">7</span>#include &lt;time.h&gt;       <span class="code-comment">// Library untuk random seed</span></div>
+                        <div class="code-line"><span class="code-line-number">8</span></div>
+                        <div class="code-line"><span class="code-line-number">9</span>#define N 1000000       <span class="code-comment">// Konstanta: ukuran array (1 juta elemen)</span></div>
+                        <div class="code-line"><span class="code-line-number">10</span>#define REPEAT 5        <span class="code-comment">// Jumlah pengulangan untuk averaging</span></div>
+                        <div class="code-line"><span class="code-line-number">11</span></div>
+                        <div class="code-line"><span class="code-line-number">12</span>int main() {</div>
+                        <div class="code-line"><span class="code-line-number">13</span>    <span class="code-comment">// 1. Alokasi memori untuk array</span></div>
+                        <div class="code-line"><span class="code-line-number">14</span>    int *data = (int*) malloc(N * sizeof(int));</div>
+                        <div class="code-line"><span class="code-line-number">15</span>    long long sum_seq = 0;</div>
+                        <div class="code-line"><span class="code-line-number">16</span>    </div>
+                        <div class="code-line"><span class="code-line-number">17</span>    <span class="code-comment">// 2. Inisialisasi random seed</span></div>
+                        <div class="code-line"><span class="code-line-number">18</span>    srand(time(NULL));</div>
+                        <div class="code-line"><span class="code-line-number">19</span>    </div>
+                        <div class="code-line"><span class="code-line-number">20</span>    <span class="code-comment">// 3. Inisialisasi data dengan nilai acak</span></div>
+                        <div class="code-line"><span class="code-line-number">21</span>    for(int i = 0; i &lt; N; i++) {</div>
+                        <div class="code-line"><span class="code-line-number">22</span>        data[i] = rand() % 100;  <span class="code-comment">// Nilai antara 0-99</span></div>
+                        <div class="code-line"><span class="code-line-number">23</span>    }</div>
+                        <div class="code-line"><span class="code-line-number">24</span>    </div>
+                        <div class="code-line"><span class="code-line-number">25</span>    <span class="code-comment">// ==============================</span></div>
+                        <div class="code-line"><span class="code-line-number">26</span>    <span class="code-comment">//   PERHITUNGAN SEQUENTIAL</span></div>
+                        <div class="code-line"><span class="code-line-number">27</span>    <span class="code-comment">// ==============================</span></div>
+                        <div class="code-line"><span class="code-line-number">28</span>    double time_seq_total = 0;</div>
+                        <div class="code-line"><span class="code-line-number">29</span>    </div>
+                        <div class="code-line"><span class="code-line-number">30</span>    for (int r = 0; r &lt; REPEAT; r++) {</div>
+                        <div class="code-line"><span class="code-line-number">31</span>        sum_seq = 0;</div>
+                        <div class="code-line"><span class="code-line-number">32</span>        double start = omp_get_wtime();</div>
+                        <div class="code-line"><span class="code-line-number">33</span>        </div>
+                        <div class="code-line"><span class="code-line-number">34</span>        for(int i = 0; i &lt; N; i++) {</div>
+                        <div class="code-line"><span class="code-line-number">35</span>            sum_seq += data[i];</div>
+                        <div class="code-line"><span class="code-line-number">36</span>        }</div>
+                        <div class="code-line"><span class="code-line-number">37</span>        </div>
+                        <div class="code-line"><span class="code-line-number">38</span>        time_seq_total += (omp_get_wtime() - start);</div>
+                        <div class="code-line"><span class="code-line-number">39</span>    }</div>
+                        <div class="code-line"><span class="code-line-number">40</span>    </div>
+                        <div class="code-line"><span class="code-line-number">41</span>    double time_seq = time_seq_total / REPEAT;</div>
+                        <div class="code-line"><span class="code-line-number">42</span>    </div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">43</span>    <span class="code-comment">// ==============================</span></div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">44</span>    <span class="code-comment">//   PERHITUNGAN PARALLEL</span></div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">45</span>    <span class="code-comment">// ==============================</span></div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">46</span>    double time_par_total = 0;</div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">47</span>    long long sum_par = 0;</div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">48</span>    </div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">49</span>    for (int r = 0; r &lt; REPEAT; r++) {</div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">50</span>        sum_par = 0;</div>
+                        <div class="code-line" style="background: rgba(107, 255, 122, 0.15);"><span class="code-line-number">52</span>        </div>
+                        <div class="code-line" style="background: rgba(107, 255, 122, 0.15);"><span class="code-line-number">53</span>        #pragma omp parallel for reduction(+:sum_par)</div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">54</span>        for(int i = 0; i &lt; N; i++) {</div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">55</span>            sum_par += data[i];</div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">56</span>        }</div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">57</span>        </div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">58</span>        time_par_total += (omp_get_wtime() - start);</div>
+                        <div class="code-line" style="background: rgba(255, 209, 102, 0.1);"><span class="code-line-number">59</span>    }</div>
+                        <div class="code-line"><span class="code-line-number">60</span>    </div>
+                        <div class="code-line"><span class="code-line-number">61</span>    double time_par = time_par_total / REPEAT;</div>
+                        <div class="code-line"><span class="code-line-number">62</span>    double speedup = time_seq / time_par;</div>
+                        <div class="code-line"><span class="code-line-number">63</span>    double efficiency = (speedup / omp_get_max_threads()) * 100;</div>
+                        <div class="code-line"><span class="code-line-number">64</span>    </div>
+                        <div class="code-line"><span class="code-line-number">65</span>    <span class="code-comment">// 6. Output hasil dan perbandingan</span></div>
+                        <div class="code-line"><span class="code-line-number">66</span>    printf("========================================\n");</div>
+                        <div class="code-line"><span class="code-line-number">67</span>    printf("        HASIL BENCHMARK OPENMP\n");</div>
+                        <div class="code-line"><span class="code-line-number">68</span>    printf("========================================\n");</div>
+                        <div class="code-line"><span class="code-line-number">69</span>    printf("Ukuran data: %d elemen\n", N);</div>
+                        <div class="code-line"><span class="code-line-number">70</span>    printf("Pengulangan: %d kali (averaging)\n", REPEAT);</div>
+                        <div class="code-line"><span class="code-line-number">71</span>    printf("Thread yang digunakan: %d\n", omp_get_max_threads());</div>
+                        <div class="code-line"><span class="code-line-number">72</span>    printf("\n");</div>
+                        <div class="code-line"><span class="code-line-number">73</span>    printf("Sequential:  %lld (%.4f detik)\n", sum_seq, time_seq);</div>
+                        <div class="code-line"><span class="code-line-number">74</span>    printf("Parallel:    %lld (%.4f detik)\n", sum_par, time_par);</div>
+                        <div class="code-line"><span class="code-line-number">75</span>    printf("\n");</div>
+                        <div class="code-line"><span class="code-line-number">76</span>    printf("Speedup:     %.2fx\n", speedup);</div>
+                        <div class="code-line"><span class="code-line-number">77</span>    printf("Efisiensi:   %.1f%%\n", efficiency);</div>
+                        <div class="code-line"><span class="code-line-number">78</span>    printf("========================================\n");</div>
+                        <div class="code-line"><span class="code-line-number">79</span>    </div>
+                        <div class="code-line"><span class="code-line-number">80</span>    <span class="code-comment">// 7. Membersihkan memori</span></div>
+                        <div class="code-line"><span class="code-line-number">81</span>    free(data);</div>
+                        <div class="code-line"><span class="code-line-number">82</span>    </div>
+                        <div class="code-line"><span class="code-line-number">83</span>    return 0;</div>
+                        <div class="code-line"><span class="code-line-number">84</span>}</div>
+                    </div>
+                    
+                    <div class="highlight-box" style="margin-top: 15px;">
+                        <div class="explanation-title">
+                            <i class="fas fa-lightbulb"></i> Cara Kompilasi & Eksekusi
+                        </div>
+                        <div class="explanation-content">
+                            <div class="explanation-point">Kompilasi dengan GCC: <span class="code-keyword">gcc -fopenmp program.c -o program</span></div>
+                            <div class="explanation-point">Menjalankan program: <span class="code-keyword">./program</span></div>
+                            <div class="explanation-point">Set jumlah thread: <span class="code-keyword">export OMP_NUM_THREADS=4</span> (Linux/Mac) atau <span class="code-keyword">set OMP_NUM_THREADS=4</span> (Windows)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="panel-section">
+                    <div class="section-title">
+                        <i class="fas fa-info-circle"></i> Penjelasan Mendetail
+                    </div>
+                    <div class="explanation-container" style="height: 770px;">
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-cube"></i> Perbaikan Utama dalam Program Ini
+                            </div>
+                            <div class="explanation-content">
+                                Program ini memiliki beberapa perbaikan penting dibanding versi sebelumnya:
+                                <div class="explanation-point"><span class="code-keyword">srand(time(NULL))</span>: Menginisialisasi random seed agar nilai acak berbeda setiap eksekusi</div>
+                                <div class="explanation-point"><span class="code-keyword">REPEAT 5</span>: Mengulang perhitungan 5 kali untuk mendapatkan waktu rata-rata</div>
+                                <div class="explanation-point"><span class="code-keyword">Averaging</span>: Menghitung waktu rata-rata untuk mengurangi variasi</div>
+                                <div class="explanation-point"><span class="code-keyword">Output lebih informatif</span>: Menampilkan thread count dan efisiensi</div>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-bolt"></i> Pragma OpenMP: <span class="code-pragma">#pragma omp parallel for reduction(+:sum_par)</span>
+                            </div>
+                            <div class="explanation-content">
+                                Ini adalah inti dari paralelisasi. Pragma ini memiliki 3 komponen:
+                                <div class="explanation-point"><span class="code-keyword">parallel</span>: Membuat team thread sesuai OMP_NUM_THREADS</div>
+                                <div class="explanation-point"><span class="code-keyword">for</span>: Membagi loop ke thread yang berbeda</div>
+                                <div class="explanation-point"><span class="code-keyword">reduction(+:sum_par)</span>: Mengakumulasi hasil dari semua thread dengan operator '+'</div>
+                                
+                                <div class="parallel-concept">
+                                    <div class="concept-title">
+                                        <i class="fas fa-sitemap"></i> Bagaimana Reduction Bekerja:
+                                    </div>
+                                    <div class="explanation-content">
+                                        1. Setiap thread membuat <span class="code-keyword">variabel privat</span> untuk sum_par<br>
+                                        2. Thread menghitung sebagian data<br>
+                                        3. Hasil dari semua thread <span class="code-keyword">dikombinasikan</span> menggunakan operator '+'<br>
+                                        4. Hasil akhir disimpan di variabel <span class="code-keyword">sum_par</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-chart-line"></i> Mengapa Menggunakan Averaging?
+                            </div>
+                            <div class="explanation-content">
+                                Pengulangan perhitungan (REPEAT = 5) memberikan manfaat:
+                                <div class="explanation-point"><strong>Mengurangi Variasi:</strong> Waktu eksekusi bisa bervariasi karena cache, scheduling OS, dll.</div>
+                                <div class="explanation-point"><strong>Hasil Lebih Stabil:</strong> Rata-rata 5 kali menjalankan mengurangi outlier</div>
+                                <div class="explanation-point"><strong>Benchmark yang Valid:</strong> Metodologi standar dalam pengukuran performa</div>
+                                <div class="explanation-point"><strong>Mengurangi Error:</strong> Mengurangi pengaruh faktor eksternal sementara</div>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-calculator"></i> Perhitungan Efisiensi
+                            </div>
+                            <div class="explanation-content">
+                                <div class="explanation-point"><span class="code-keyword">Speedup</span> = Waktu_Sequential / Waktu_Parallel</div>
+                                <div class="explanation-point"><span class="code-keyword">Efisiensi</span> = (Speedup / Jumlah_Thread) × 100%</div>
+                                <div class="explanation-point">Contoh: Speedup 3.2x dengan 4 thread → Efisiensi = (3.2/4)×100% = 80%</div>
+                                <div class="explanation-point">Efisiensi 100% berarti parallelisasi sempurna tanpa overhead</div>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-random"></i> Mengapa Menggunakan srand(time(NULL))?
+                            </div>
+                            <div class="explanation-content">
+                                <div class="explanation-point"><strong>Mencegah Hasil Sama:</strong> Tanpa seed, rand() menghasilkan urutan sama setiap eksekusi</div>
+                                <div class="explanation-point"><strong>Waktu sebagai Seed:</strong> time(NULL) memberikan detik sejak epoch (unik)</div>
+                                <div class="explanation-point"><strong>Realistis:</strong> Data berbeda setiap run lebih menyerupai aplikasi nyata</div>
+                                <div class="explanation-point"><strong>Benchmark yang Fair:</strong> Menguji dengan berbagai pola data</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="nav-buttons" style="margin-top: 15px;">
+                        <button class="nav-btn" id="prevSlideToViz">
+                            <i class="fas fa-arrow-left"></i> Kembali ke Visualisasi
+                        </button>
+                        <button class="nav-btn primary" id="nextToConcept">
+                            <i class="fas fa-forward"></i> Konsep Paralelisasi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide-nav">
+            <div class="slide-dot" data-slide="1"></div>
+            <div class="slide-dot active" data-slide="2"></div>
+            <div class="slide-dot" data-slide="3"></div>
+            <div class="slide-dot" data-slide="4"></div>
+            <div class="slide-dot" data-slide="5"></div>
+            <div class="slide-dot" data-slide="6"></div>
+        </div>
+    </div>
+    
+    <!-- Slide 3: Konsep Paralelisasi OpenMP -->
+    <div class="slide" id="slide3">
+        <div class="slide-header">
+            <div class="header-left">
+                <h1><i class="fas fa-sitemap"></i> Konsep Paralelisasi OpenMP</h1>
+                <h2>Memahami Bagaimana Thread Bekerja dalam Parallel Reduction</h2>
+            </div>
+            <div class="header-right">
+                <div class="timer-display">
+                    <i class="fas fa-users"></i> Multi-Threading
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide-content">
+            <div class="left-panel">
+                <div class="panel-section">
+                    <div class="section-title">
+                        <i class="fas fa-sitemap"></i> Arsitektur Parallel Reduction
+                    </div>
+                    <div class="explanation-container" style="height: 770px;">
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-project-diagram"></i> Model Eksekusi Parallel Reduction
+                            </div>
+                            <div class="explanation-content">
+                                <div style="display: flex; justify-content: center; margin: 20px 0;">
+                                    <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; width: 100%;">
+                                        <div style="text-align: center; color: #ffd166; margin-bottom: 15px; font-size: 18px;">
+                                            <i class="fas fa-code"></i> #pragma omp parallel for reduction(+:sum)
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                                            <div style="text-align: center; flex: 1; min-width: 22%; margin: 5px;">
+                                                <div style="background: #ff7f50; padding: 10px; border-radius: 8px; margin-bottom: 5px;">
+                                                    <i class="fas fa-user"></i> Thread 0
+                                                </div>
+                                                <div style="font-size: 12px; color: #a3b7ff;">Data[0] - Data[249999]</div>
+                                            </div>
+                                            <div style="font-size: 24px; color: #6bff7a; margin: 0 5px;">+</div>
+                                            <div style="text-align: center; flex: 1; min-width: 22%; margin: 5px;">
+                                                <div style="background: #6bff7a; padding: 10px; border-radius: 8px; margin-bottom: 5px;">
+                                                    <i class="fas fa-user"></i> Thread 1
+                                                </div>
+                                                <div style="font-size: 12px; color: #a3b7ff;">Data[250000] - Data[499999]</div>
+                                            </div>
+                                            <div style="font-size: 24px; color: #6bff7a; margin: 0 5px;">+</div>
+                                            <div style="text-align: center; flex: 1; min-width: 22%; margin: 5px;">
+                                                <div style="background: #4a9fff; padding: 10px; border-radius: 8px; margin-bottom: 5px;">
+                                                    <i class="fas fa-user"></i> Thread 2
+                                                </div>
+                                                <div style="font-size: 12px; color: #a3b7ff;">Data[500000] - Data[749999]</div>
+                                            </div>
+                                            <div style="font-size: 24px; color: #6bff7a; margin: 0 5px;">+</div>
+                                            <div style="text-align: center; flex: 1; min-width: 22%; margin: 5px;">
+                                                <div style="background: #ffd166; padding: 10px; border-radius: 8px; margin-bottom: 5px;">
+                                                    <i class="fas fa-user"></i> Thread 3
+                                                </div>
+                                                <div style="font-size: 12px; color: #a3b7ff;">Data[750000] - Data[999999]</div>
+                                            </div>
+                                        </div>
+                                        <div style="text-align: center; margin-top: 20px; font-size: 24px; color: #ffd166;">
+                                            <i class="fas fa-arrow-down"></i>
+                                        </div>
+                                        <div style="text-align: center; background: rgba(107, 255, 122, 0.2); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                                            <i class="fas fa-calculator"></i> Hasil Final: sum_total
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-cogs"></i> Proses Paralelisasi Langkah-demi-Langkah
+                            </div>
+                            <div class="explanation-content">
+                                <div class="explanation-point"><strong>1. Inisialisasi Thread Pool:</strong> OpenMP membuat thread sesuai OMP_NUM_THREADS</div>
+                                <div class="explanation-point"><strong>2. Pembagian Workload:</strong> Loop dibagi secara otomatis ke thread yang tersedia</div>
+                                <div class="explanation-point"><strong>3. Eksekusi Paralel:</strong> Setiap thread menghitung sebagian data secara independen</div>
+                                <div class="explanation-point"><strong>4. Reduction Phase:</strong> Hasil dari semua thread dikombinasikan</div>
+                                <div class="explanation-point"><strong>5. Synchronization:</strong> Thread menunggu hingga semua selesai sebelum melanjutkan</div>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-tachometer-alt"></i> Faktor yang Mempengaruhi Performa
+                            </div>
+                            <div class="explanation-content">
+                                <div class="explanation-point"><strong>Ukuran Data:</strong> Semakin besar data, semakin besar manfaat paralelisasi</div>
+                                <div class="explanation-point"><strong>Jumlah Thread:</strong> Optimal tergantung CPU cores dan workload</div>
+                                <div class="explanation-point"><strong>Cache Locality:</strong> Akses memori yang efisien meningkatkan performa</div>
+                                <div class="explanation-point"><strong>Overhead Thread:</strong> Pembuatan dan sinkronisasi thread membutuhkan waktu</div>
+                                <div class="explanation-point"><strong>Load Balancing:</strong> Pembagian workload yang merata antar thread</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="panel-section">
+                    <div class="section-title">
+                        <i class="fas fa-lightbulb"></i> Tips Optimasi OpenMP
+                    </div>
+                    <div class="explanation-container" style="height: 770px;">
+                        <div class="parallel-concept">
+                            <div class="concept-title">
+                                <i class="fas fa-rocket"></i> Strategi Optimasi
+                            </div>
+                            <div class="explanation-content">
+                                <div class="explanation-point">Gunakan <span class="code-keyword">schedule(dynamic)</span> untuk workload yang tidak seimbang</div>
+                                <div class="explanation-point">Minimalkan akses memori shared untuk menghindari false sharing</div>
+                                <div class="explanation-point">Gunakan <span class="code-keyword">private</span> dan <span class="code-keyword">firstprivate</span> untuk variabel thread-local</div>
+                                <div class="explanation-point">Hindari nested parallelism jika tidak diperlukan</div>
+                                <div class="explanation-point">Ukur speedup untuk menentukan jumlah thread optimal</div>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-microchip"></i> Strategi Pembagian Data
+                            </div>
+                            <div class="explanation-content">
+                                OpenMP menyediakan beberapa strategi pembagian loop:
+                                <div class="explanation-point"><span class="code-keyword">static</span>: Pembagian tetap, cocok untuk workload seragam</div>
+                                <div class="explanation-point"><span class="code-keyword">dynamic</span>: Pembagian dinamis, cocok untuk workload bervariasi</div>
+                                <div class="explanation-point"><span class="code-keyword">guided</span>: Blok besar di awal, semakin kecil di akhir</div>
+                                <div class="explanation-point"><span class="code-keyword">auto</span>: Kompilator memutuskan strategi terbaik</div>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-chart-bar"></i> Analisis Amdahl's Law
+                            </div>
+                            <div class="explanation-content">
+                                <div style="background: rgba(255, 209, 102, 0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                                    <strong>Speedup Maksimum = 1 / ((1-p) + p/N)</strong><br>
+                                    Dimana:<br>
+                                    • p = bagian program yang bisa diparalelkan<br>
+                                    • N = jumlah thread/processor
+                                </div>
+                                <div class="explanation-point">Jika 95% parallelizable, speedup maksimal dengan 4 thread ≈ 3.48x</div>
+                                <div class="explanation-point">Jika 90% parallelizable, speedup maksimal dengan 8 thread ≈ 4.71x</div>
+                                <div class="explanation-point">Overhead thread mengurangi speedup aktual</div>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-exclamation-triangle"></i> Tantangan dan Solusi
+                            </div>
+                            <div class="explanation-content">
+                                <div class="explanation-point"><strong>False Sharing:</strong> Variabel berdekatan di cache line berbeda thread</div>
+                                <div class="explanation-point"><strong>Solusi:</strong> Gunakan padding atau align variabel</div>
+                                <div class="explanation-point"><strong>Race Condition:</strong> Akses bersamaan ke variabel shared</div>
+                                <div class="explanation-point"><strong>Solusi:</strong> Gunakan critical sections atau atomic operations</div>
+                                <div class="explanation-point"><strong>Load Imbalance:</strong> Thread selesai pada waktu berbeda</div>
+                                <div class="explanation-point"><strong>Solusi:</strong> Gunakan schedule(dynamic) atau work stealing</div>
+                            </div>
+                        </div>
+                        
+                        <div class="nav-buttons" style="margin-top: 20px;">
+                            <button class="nav-btn" id="prevToExplanation">
+                                <i class="fas fa-arrow-left"></i> Kembali ke Penjelasan Kode
+                            </button>
+                            <button class="nav-btn primary" id="nextToBenchmark">
+                                <i class="fas fa-forward"></i> Tabel Benchmark
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide-nav">
+            <div class="slide-dot" data-slide="1"></div>
+            <div class="slide-dot" data-slide="2"></div>
+            <div class="slide-dot active" data-slide="3"></div>
+            <div class="slide-dot" data-slide="4"></div>
+            <div class="slide-dot" data-slide="5"></div>
+            <div class="slide-dot" data-slide="6"></div>
+        </div>
+    </div>
+    
+    <!-- Slide 4: Tabel Benchmark -->
+    <div class="slide" id="slide4">
+        <div class="slide-header">
+            <div class="header-left">
+                <h1><i class="fas fa-table"></i> Tabel Hasil Benchmark Dinamis</h1>
+                <h2>Perbandingan Performa Berbagai Konfigurasi Thread</h2>
+            </div>
+            <div class="header-right">
+                <div class="timer-display">
+                    Speedup Maksimal: <span id="maxSpeedup">0.00x</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="benchmark-content">
+            <div class="benchmark-table-container">
+                <div class="section-title">
+                    <i class="fas fa-table"></i> Tabel Hasil Benchmark Dinamis
+                </div>
+                <div class="config-panel" style="margin-bottom: 15px;">
+                    <div class="config-row">
+                        <span class="config-label">Waktu Sequential:</span>
+                        <input type="text" class="config-input" id="sequentialTimeInput" value="0.00" readonly>
+                        <span style="color: #a3b7ff; font-size: 14px;">ms</span>
+                    </div>
+                    <div class="config-row">
+                        <span class="config-label">Ukuran Data:</span>
+                        <input type="text" class="config-input" id="currentDataSizeInput" value="1,000,000" readonly>
+                    </div>
+                    <div class="config-row">
+                        <span class="config-label">Jumlah Pengulangan:</span>
+                        <input type="text" class="config-input" id="currentRepeatInput" value="5" readonly>
+                    </div>
+                </div>
+                <table class="benchmark-table" id="benchmarkTable">
+                    <thead>
+                        <tr>
+                            <th>Jumlah Thread</th>
+                            <th>Waktu Eksekusi (ms)</th>
+                            <th>Speedup</th>
+                            <th>Efisiensi (%)</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="benchmarkTableBody">
+                        <!-- Data benchmark akan diisi secara dinamis -->
+                    </tbody>
+                </table>
+                
+                <div class="nav-buttons">
+                    <button class="nav-btn" id="prevToConcept">
+                        <i class="fas fa-arrow-left"></i> Kembali ke Konsep
+                    </button>
+                    <button class="nav-btn primary" id="runBenchmarkBtn">
+                        <i class="fas fa-sync-alt"></i> Jalankan Benchmark Lengkap
+                    </button>
+                    <button class="nav-btn warning" id="addCurrentResultBtn">
+                        <i class="fas fa-plus"></i> Tambah Hasil Saat Ini
+                    </button>
+                    <button class="nav-btn danger" id="clearBenchmarkBtn">
+                        <i class="fas fa-trash"></i> Hapus Semua Data
+                    </button>
+                    <button class="nav-btn" id="nextToChartBtn">
+                        <i class="fas fa-chart-line"></i> Lihat Grafik
+                    </button>
+                    <button class="nav-btn" id="nextToAnalysisBtn">
+                        <i class="fas fa-chart-pie"></i> Analisis Data
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide-nav">
+            <div class="slide-dot" data-slide="1"></div>
+            <div class="slide-dot" data-slide="2"></div>
+            <div class="slide-dot" data-slide="3"></div>
+            <div class="slide-dot active" data-slide="4"></div>
+            <div class="slide-dot" data-slide="5"></div>
+            <div class="slide-dot" data-slide="6"></div>
+        </div>
+    </div>
+    
+    <!-- Slide 5: Grafik Benchmark -->
+    <div class="slide" id="slide5">
+        <div class="slide-header">
+            <div class="header-left">
+                <h1><i class="fas fa-chart-line"></i> Grafik Speedup vs Number of Threads</h1>
+                <h2>Visualisasi Perbandingan Speedup Aktual vs Speedup Ideal</h2>
+            </div>
+            <div class="header-right">
+                <div class="timer-display">
+                    Speedup Maksimal: <span id="maxSpeedupChart">0.00x</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="benchmark-content">
+            <div class="benchmark-chart-container">
+                <div class="section-title">
+                    <i class="fas fa-chart-line"></i> Grafik Speedup vs Number of Threads
+                </div>
+                <div class="chart">
+                    <div class="chart-title" id="chartTitle">Perbandingan Speedup Aktual vs Speedup Ideal (Linear)</div>
+                    <div class="chart-graph" id="chartGraph">
+                        <div class="chart-axis-y">
+                            <div class="y-tick">5x</div>
+                            <div class="y-tick">4x</div>
+                            <div class="y-tick">3x</div>
+                            <div class="y-tick">2x</div>
+                            <div class="y-tick">1x</div>
+                            <div class="y-tick">0x</div>
+                        </div>
+                        <!-- Chart bars akan di-generate secara dinamis -->
+                    </div>
+                    <div class="ideal-line" style="top: 70px;" title="Ideal Speedup (Linear)"></div>
+                    
+                    <div class="config-panel" style="margin-top: 20px;">
+                        <div class="config-row">
+                            <span class="config-label">Tampilkan Garis Ideal:</span>
+                            <input type="checkbox" id="showIdealLine" checked style="transform: scale(1.3);">
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Skala Maksimal:</span>
+                            <select class="config-input" id="maxScaleSelect" style="width: 120px;">
+                                <option value="5">5x</option>
+                                <option value="10">10x</option>
+                                <option value="16">16x</option>
+                            </select>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Ukuran Data:</span>
+                            <span style="color: #ffd166; font-weight: bold;" id="chartDataSize">1,000,000</span>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Pengulangan:</span>
+                            <span style="color: #6bff7a; font-weight: bold;" id="chartRepeat">5</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="nav-buttons">
+                    <button class="nav-btn" id="prevSlideBtn2">
+                        <i class="fas fa-arrow-left"></i> Kembali ke Tabel
+                    </button>
+                    <button class="nav-btn primary" id="animateChartBtn">
+                        <i class="fas fa-play"></i> Animasikan Grafik
+                    </button>
+                    <button class="nav-btn danger" id="clearChartBtn">
+                        <i class="fas fa-trash"></i> Hapus Grafik
+                    </button>
+                    <button class="nav-btn" id="nextToAnalysisBtn2">
+                        <i class="fas fa-chart-pie"></i> Analisis Data
+                    </button>
+                    <button class="nav-btn" id="backToVizBtn">
+                        <i class="fas fa-microchip"></i> Kembali ke Visualisasi
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide-nav">
+            <div class="slide-dot" data-slide="1"></div>
+            <div class="slide-dot" data-slide="2"></div>
+            <div class="slide-dot" data-slide="3"></div>
+            <div class="slide-dot" data-slide="4"></div>
+            <div class="slide-dot active" data-slide="5"></div>
+            <div class="slide-dot" data-slide="6"></div>
+        </div>
+    </div>
+    
+    <!-- Slide 6: Analisis dan Kesimpulan -->
+    <div class="slide" id="slide6">
+        <div class="slide-header">
+            <div class="header-left">
+                <h1><i class="fas fa-chart-pie"></i> Analisis Hasil & Kesimpulan</h1>
+                <h2>Evaluasi Performa Parallel Reduction dan Amdahl's Law</h2>
+            </div>
+            <div class="header-right">
+                <div class="timer-display">
+                    <i class="fas fa-chart-line"></i> Efisiensi: <span id="avgEfficiency">0%</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide-content">
+            <div class="left-panel">
+                <div class="panel-section">
+                    <div class="section-title">
+                        <i class="fas fa-chart-bar"></i> Analisis Hasil Benchmark
+                    </div>
+                    <div class="explanation-container" style="height: 770px;">
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-table"></i> Pola Speedup vs Thread Count
+                            </div>
+                            <div class="explanation-content">
+                                Berdasarkan data benchmark, pola speedup mengikuti Hukum Amdahl:
+                                
+                                <div id="benchmarkAnalysis" style="margin-top: 15px;">
+                                    <!-- Analisis akan diisi secara dinamis -->
+                                    <div style="text-align: center; color: #a3b7ff; padding: 20px;">
+                                        <i class="fas fa-chart-bar" style="font-size: 48px; margin-bottom: 15px; display: block;"></i>
+                                        Jalankan benchmark terlebih dahulu untuk melihat analisis
+                                    </div>
+                                </div>
+                                
+                                <div class="highlight-box" style="margin-top: 15px;">
+                                    <div class="explanation-title">
+                                        <i class="fas fa-calculator"></i> Rumus Amdahl's Law
+                                    </div>
+                                    <div class="explanation-content">
+                                        <strong>Speedup Maksimum = 1 / ((1-p) + p/N)</strong><br><br>
+                                        <div class="explanation-point"><strong>p</strong> = fraksi parallelizable (0.0 - 1.0)</div>
+                                        <div class="explanation-point"><strong>N</strong> = jumlah thread/processor</div>
+                                        <div class="explanation-point"><strong>(1-p)</strong> = fraksi sequential (tidak bisa diparalelkan)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-exclamation-triangle"></i> Mengapa Efisiensi Menurun pada 16 Thread?
+                            </div>
+                            <div class="explanation-content">
+                                <div class="explanation-point"><strong>1. Overhead Thread Management:</strong> 
+                                    <div style="margin-left: 20px; margin-top: 5px; color: #a3b7ff;">
+                                        • Pembuatan dan penghancuran thread<br>
+                                        • Sinkronisasi antar thread<br>
+                                        • Context switching yang lebih sering
+                                    </div>
+                                </div>
+                                
+                                <div class="explanation-point"><strong>2. Memory Bandwidth Limitation:</strong>
+                                    <div style="margin-left: 20px; margin-top: 5px; color: #a3b7ff;">
+                                        • Akses memori bersamaan yang tinggi<br>
+                                        • Cache thrashing dan false sharing<br>
+                                        • Bottleneck pada memory bus
+                                    </div>
+                                </div>
+                                
+                                <div class="explanation-point"><strong>3. Diminishing Returns:</strong>
+                                    <div style="margin-left: 20px; margin-top: 5px; color: #a3b7ff;">
+                                        • Hukum Amdahl: batasan fraksi sequential<br>
+                                        • Overhead tumbuh lebih cepat daripada benefit<br>
+                                        • Kompetisi resource yang semakin ketat
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="panel-section">
+                    <div class="section-title">
+                        <i class="fas fa-lightbulb"></i> Kesimpulan dan Rekomendasi
+                    </div>
+                    <div class="explanation-container" style="height: 770px;">
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-check-circle"></i> Temuan Utama
+                            </div>
+                            <div class="explanation-content">
+                                <div class="explanation-point"><strong>Optimal Thread Count:</strong> 
+                                    <span id="optimalThreads" style="color: #6bff7a; font-weight: bold;">4-8 threads</span>
+                                </div>
+                                <div class="explanation-point"><strong>Speedup Terbaik:</strong> 
+                                    <span id="bestSpeedup" style="color: #ffd166; font-weight: bold;">3.0x - 6.0x</span>
+                                </div>
+                                <div class="explanation-point"><strong>Efisiensi Maksimal:</strong> 
+                                    <span id="maxEfficiency" style="color: #4a9fff; font-weight: bold;">70-85%</span>
+                                </div>
+                                <div class="explanation-point"><strong>Diminishing Returns Start:</strong> 
+                                    <span style="color: #ff7f50; font-weight: bold;">>8 threads</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-microchip"></i> Karakteristik Workload
+                            </div>
+                            <div class="explanation-content">
+                                <div style="display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap;">
+                                    <div style="flex: 1; min-width: 150px; background: rgba(107, 255, 122, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #6bff7a;">
+                                        <div style="font-size: 12px; color: #a3b7ff;">Parallel Fraction</div>
+                                        <div style="font-size: 24px; color: #6bff7a;" id="parallelFraction">95%</div>
+                                    </div>
+                                    <div style="flex: 1; min-width: 150px; background: rgba(255, 126, 80, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #ff7f50;">
+                                        <div style="font-size: 12px; color: #a3b7ff;">Sequential Fraction</div>
+                                        <div style="font-size: 24px; color: #ff7f50;" id="sequentialFraction">5%</div>
+                                    </div>
+                                    <div style="flex: 1; min-width: 150px; background: rgba(255, 209, 102, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #ffd166;">
+                                        <div style="font-size: 12px; color: #a3b7ff;">Overhead per Thread</div>
+                                        <div style="font-size: 24px; color: #ffd166;" id="threadOverhead">1.5%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-rocket"></i> Rekomendasi Implementasi
+                            </div>
+                            <div class="explanation-content">
+                                <div class="explanation-point"><strong>1. Ukuran Data Kecil (&lt; 10,000):</strong> Gunakan 2-4 thread</div>
+                                <div class="explanation-point"><strong>2. Ukuran Data Sedang (10k - 1M):</strong> Gunakan 4-8 thread</div>
+                                <div class="explanation-point"><strong>3. Ukuran Data Besar (> 1M):</strong> Gunakan 8-12 thread</div>
+                                <div class="explanation-point"><strong>4. Always Measure:</strong> Ukur speedup untuk kasus spesifik</div>
+                                <div class="explanation-point"><strong>5. Consider NUMA:</strong> Perhatikan arsitektur memori pada multi-socket</div>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-section">
+                            <div class="explanation-title">
+                                <i class="fas fa-graduation-cap"></i> Pelajaran yang Dipetik
+                            </div>
+                            <div class="explanation-content">
+                                <div class="explanation-point">• <strong>Paralelisasi bukan solusi ajaib</strong> - ada batasan teoretis (Amdahl's Law)</div>
+                                <div class="explanation-point">• <strong>Lebih banyak thread ≠ lebih cepat</strong> - ada titik optimal</div>
+                                <div class="explanation-point">• <strong>Overhead signifikan</strong> pada thread count tinggi</div>
+                                <div class="explanation-point">• <strong>Memory bandwidth menjadi bottleneck</strong> pada workload memory-intensive</div>
+                                <div class="explanation-point">• <strong>Profile sebelum optimize</strong> - ukur untuk konfigurasi spesifik</div>
+                            </div>
+                        </div>
+                        
+                        <div class="nav-buttons" style="margin-top: 20px;">
+                            <button class="nav-btn" id="prevToChart">
+                                <i class="fas fa-arrow-left"></i> Kembali ke Grafik
+                            </button>
+                            <button class="nav-btn primary" id="runAnalysisBtn">
+                                <i class="fas fa-chart-line"></i> Analisis Data
+                            </button>
+                            <button class="nav-btn" id="backToStart">
+                                <i class="fas fa-home"></i> Ke Visualisasi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide-nav">
+            <div class="slide-dot" data-slide="1"></div>
+            <div class="slide-dot" data-slide="2"></div>
+            <div class="slide-dot" data-slide="3"></div>
+            <div class="slide-dot" data-slide="4"></div>
+            <div class="slide-dot" data-slide="5"></div>
+            <div class="slide-dot active" data-slide="6"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Konfigurasi
+    const DATA_SIZE = 32; // Diubah dari 24 menjadi 32 agar habis dibagi 16
+    let THREAD_COUNT = 4;
+    let ACTUAL_N = 1000000;
+    let REPEAT_COUNT = 5;
+    
+    // Langkah-langkah eksekusi
+    let STEPS = [];
+    
+    // Data Benchmark DINAMIS
+    let benchmarkData = [];
+    
+    // Data Analisis
+    let analysisData = {
+        parallelFraction: 0.95,
+        sequentialFraction: 0.05,
+        overheadPerThread: 0.015,
+        optimalThreads: 4,
+        bestSpeedup: 0,
+        maxEfficiency: 0
+    };
+    
+    // State
+    let data = [];
+    let threadSums = [];
+    let currentStep = 0;
+    let isRunning = false;
+    let isAutoMode = false;
+    let autoInterval = null;
+    let speed = 5;
+    let startTime = 0;
+    let timerInterval = null;
+    let executionTime = 0;
+    let currentSlide = 1;
+    let logEntries = [];
+    let currentParallelTime = 0;
+    let currentSequentialTime = 0;
+    let simulationRunning = false;
+    let animationTimeouts = [];
+    
+    // DOM Elements
+    const dataArray = document.getElementById('dataArray');
+    const threadsContainer = document.getElementById('threadsContainer');
+    const logContainer = document.getElementById('logContainer');
+    const progressFill = document.getElementById('progressFill');
+    const speedupValue = document.getElementById('speedupValue');
+    const sequentialTimeElem = document.getElementById('sequentialTime');
+    const parallelTimeElem = document.getElementById('parallelTime');
+    const threadCountElem = document.getElementById('threadCount');
+    const dataSizeElem = document.getElementById('dataSize');
+    const repeatCountElem = document.getElementById('repeatCount');
+    const currentStepText = document.getElementById('currentStepText');
+    const stepIndicator = document.getElementById('stepIndicator');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const maxSpeedup = document.getElementById('maxSpeedup');
+    const maxSpeedupChart = document.getElementById('maxSpeedupChart');
+    const benchmarkTableBody = document.getElementById('benchmarkTableBody');
+    const chartGraph = document.getElementById('chartGraph');
+    const sequentialTimeInput = document.getElementById('sequentialTimeInput');
+    const currentDataSizeInput = document.getElementById('currentDataSizeInput');
+    const currentRepeatInput = document.getElementById('currentRepeatInput');
+    const chartTitle = document.getElementById('chartTitle');
+    const chartDataSize = document.getElementById('chartDataSize');
+    const chartRepeat = document.getElementById('chartRepeat');
+    const showIdealLine = document.getElementById('showIdealLine');
+    const maxScaleSelect = document.getElementById('maxScaleSelect');
+    
+    // Analisis DOM Elements
+    const avgEfficiency = document.getElementById('avgEfficiency');
+    const benchmarkAnalysis = document.getElementById('benchmarkAnalysis');
+    const optimalThreads = document.getElementById('optimalThreads');
+    const bestSpeedup = document.getElementById('bestSpeedup');
+    const maxEfficiency = document.getElementById('maxEfficiency');
+    const parallelFraction = document.getElementById('parallelFraction');
+    const sequentialFraction = document.getElementById('sequentialFraction');
+    const threadOverhead = document.getElementById('threadOverhead');
+    
+    // Control buttons
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const nextStepBtn = document.getElementById('nextStepBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const explainCodeBtn = document.getElementById('explainCodeBtn');
+    const speedSlider = document.getElementById('speedSlider');
+    
+    // Navigation buttons
+    const prevSlideToViz = document.getElementById('prevSlideToViz');
+    const nextToConcept = document.getElementById('nextToConcept');
+    const prevToExplanation = document.getElementById('prevToExplanation');
+    const nextToBenchmark = document.getElementById('nextToBenchmark');
+    const prevToConcept = document.getElementById('prevToConcept');
+    const runBenchmarkBtn = document.getElementById('runBenchmarkBtn');
+    const addCurrentResultBtn = document.getElementById('addCurrentResultBtn');
+    const clearBenchmarkBtn = document.getElementById('clearBenchmarkBtn');
+    const nextToChartBtn = document.getElementById('nextToChartBtn');
+    const prevSlideBtn2 = document.getElementById('prevSlideBtn2');
+    const animateChartBtn = document.getElementById('animateChartBtn');
+    const clearChartBtn = document.getElementById('clearChartBtn');
+    const backToVizBtn = document.getElementById('backToVizBtn');
+    const nextToAnalysisBtn = document.getElementById('nextToAnalysisBtn');
+    const nextToAnalysisBtn2 = document.getElementById('nextToAnalysisBtn2');
+    const prevToChart = document.getElementById('prevToChart');
+    const runAnalysisBtn = document.getElementById('runAnalysisBtn');
+    const backToStart = document.getElementById('backToStart');
+    
+    // Config elements
+    const threadConfig = document.getElementById('threadConfig');
+    const dataConfig = document.getElementById('dataConfig');
+    const repeatConfig = document.getElementById('repeatConfig');
+    
+    // Fungsi untuk menentukan thread mana yang mengolah data tertentu
+    function getThreadForDataIndex(dataIndex, threadCount, dataSize) {
+        const itemsPerThread = Math.floor(dataSize / threadCount);
+        const remainder = dataSize % threadCount;
+        
+        let cumulativeItems = 0;
+        for (let t = 0; t < threadCount; t++) {
+            const itemsForThisThread = itemsPerThread + (t < remainder ? 1 : 0);
+            if (dataIndex < cumulativeItems + itemsForThisThread) {
+                return t;
+            }
+            cumulativeItems += itemsForThisThread;
+        }
+        return threadCount - 1; // fallback
+    }
+    
+    // Fungsi untuk mendapatkan indeks data untuk thread tertentu
+    function getDataRangeForThread(threadIndex, threadCount, dataSize) {
+        const itemsPerThread = Math.floor(dataSize / threadCount);
+        const remainder = dataSize % threadCount;
+        
+        let startIdx = 0;
+        for (let t = 0; t < threadIndex; t++) {
+            startIdx += itemsPerThread + (t < remainder ? 1 : 0);
+        }
+        
+        let endIdx = startIdx + itemsPerThread;
+        if (threadIndex < remainder) {
+            endIdx += 1;
+        }
+        
+        return { startIdx, endIdx: Math.min(endIdx, dataSize) };
+    }
+    
+    // Inisialisasi
+    function init() {
+        THREAD_COUNT = parseInt(threadConfig.value);
+        ACTUAL_N = parseInt(dataConfig.value);
+        REPEAT_COUNT = parseInt(repeatConfig.value);
+        
+        updateSteps();
+        initData();
+        initThreads();
+        initStepIndicator();
+        initBenchmarkTable();
+        initChart();
+        resetLog();
+        
+        addLog("=== SISTEM VISUALISASI PARALLEL SUM REDUCTION DENGAN OpenMP ===", "info");
+        addLog(`Konfigurasi saat ini:`, "info");
+        addLog(`- Jumlah thread: ${THREAD_COUNT}`, "info");
+        addLog(`- Ukuran data: ${ACTUAL_N.toLocaleString()} elemen`, "info");
+        addLog(`- Pengulangan: ${REPEAT_COUNT}x (averaging)`, "info");
+        addLog(`- Metode: Parallel reduction menggunakan #pragma omp parallel for`, "info");
+        addLog("Siap memulai visualisasi langkah-demi-langkah...", "success");
+        
+        calculateExecutionTimes();
+        updateStepDisplay();
+        updateControls();
+        updateSlideDots();
+    }
+    
+    // Update slide dots
+    function updateSlideDots() {
+        const slideNavs = document.querySelectorAll('.slide-nav');
+        slideNavs.forEach(nav => {
+            const dots = nav.querySelectorAll('.slide-dot');
+            if (dots.length < 6) {
+                for (let i = dots.length + 1; i <= 6; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'slide-dot';
+                    dot.dataset.slide = i.toString();
+                    nav.appendChild(dot);
+                }
+            }
+        });
+        
+        document.querySelectorAll('.slide-dot').forEach(dot => {
+            dot.removeEventListener('click', handleSlideDotClick);
+            dot.addEventListener('click', handleSlideDotClick);
+        });
+    }
+    
+    // Handle slide dot clicks
+    function handleSlideDotClick(e) {
+        const slideNumber = parseInt(e.target.dataset.slide);
+        changeSlide(slideNumber);
+    }
+    
+    // Hitung waktu eksekusi
+    function calculateExecutionTimes() {
+        currentSequentialTime = calculateSequentialTime();
+        currentParallelTime = calculateParallelTime();
+        
+        updateSpeedup();
+        dataSizeElem.textContent = ACTUAL_N.toLocaleString();
+        threadCountElem.textContent = THREAD_COUNT;
+        repeatCountElem.textContent = REPEAT_COUNT;
+        currentDataSizeInput.value = ACTUAL_N.toLocaleString();
+        currentRepeatInput.value = REPEAT_COUNT;
+        chartDataSize.textContent = ACTUAL_N.toLocaleString();
+        chartRepeat.textContent = REPEAT_COUNT;
+    }
+    
+    // Hitung waktu sequential
+    function calculateSequentialTime() {
+        const baseTimePerElement = 0.00000345;
+        let sequentialTime = (baseTimePerElement * ACTUAL_N * 1000);
+        sequentialTime = sequentialTime * REPEAT_COUNT;
+        return Math.max(sequentialTime.toFixed(2), 0.1);
+    }
+    
+    // Hitung waktu parallel
+    function calculateParallelTime() {
+        const baseSequentialTime = parseFloat(calculateSequentialTime());
+        
+        if (THREAD_COUNT === 1) return baseSequentialTime;
+        
+        const parallelFraction = 0.95;
+        const overheadPerThread = 0.015;
+        
+        const idealParallelTime = baseSequentialTime * ((1 - parallelFraction) + (parallelFraction / THREAD_COUNT));
+        const overhead = baseSequentialTime * (overheadPerThread * Math.log2(THREAD_COUNT));
+        
+        const minPossibleTime = baseSequentialTime / THREAD_COUNT;
+        const calculatedTime = Math.max(idealParallelTime + overhead, minPossibleTime);
+        
+        return Math.max(calculatedTime.toFixed(2), 0.1);
+    }
+    
+    // Update langkah-langkah
+    function updateSteps() {
+        STEPS = [
+            "Inisialisasi Program dan Alokasi Memori",
+            "Menginisialisasi random seed dengan srand(time(NULL))",
+            "Mengisi data dengan nilai acak (rand() % 100)",
+            "Eksekusi Sequential Sum dengan Averaging (Pengukuran Waktu)",
+            "Eksekusi Parallel Reduction dengan OpenMP dan Averaging"
+        ];
+        
+        for (let i = 0; i < THREAD_COUNT; i++) {
+            STEPS.push(`Thread ${i}: Menghitung sebagian data`);
+        }
+        
+        STEPS.push(
+            "Menggabungkan hasil dari semua thread",
+            "Menghitung Speedup dan Efisiensi",
+            "Menampilkan hasil dan membersihkan memori"
+        );
+    }
+    
+    // Update benchmark data
+    function updateBenchmarkData() {
+        const currentSpeedup = (currentSequentialTime / currentParallelTime).toFixed(2);
+        const efficiency = ((currentSpeedup / THREAD_COUNT) * 100).toFixed(1);
+        
+        const existingIndex = benchmarkData.findIndex(item => 
+            item.threads === THREAD_COUNT && item.dataSize === ACTUAL_N && item.repeat === REPEAT_COUNT
+        );
+        
+        if (existingIndex >= 0) {
+            benchmarkData[existingIndex] = {
+                threads: THREAD_COUNT,
+                time: parseFloat(currentParallelTime),
+                speedup: parseFloat(currentSpeedup),
+                efficiency: parseFloat(efficiency),
+                dataSize: ACTUAL_N,
+                repeat: REPEAT_COUNT,
+                timestamp: new Date().toISOString()
+            };
+            addLog(`Data benchmark untuk ${THREAD_COUNT} thread diperbarui: ${currentSpeedup}x speedup`, "info");
+        } else {
+            benchmarkData.push({
+                threads: THREAD_COUNT,
+                time: parseFloat(currentParallelTime),
+                speedup: parseFloat(currentSpeedup),
+                efficiency: parseFloat(efficiency),
+                dataSize: ACTUAL_N,
+                repeat: REPEAT_COUNT,
+                timestamp: new Date().toISOString()
+            });
+            addLog(`Data benchmark baru ditambahkan: ${THREAD_COUNT} thread = ${currentSpeedup}x speedup`, "success");
+        }
+        
+        benchmarkData.sort((a, b) => a.threads - b.threads);
+        updateBenchmarkTable();
+        updateChart();
+        updateAnalysisDisplay();
+    }
+    
+    // Hapus data benchmark
+    function removeBenchmarkData(threads, dataSize, repeat) {
+        const initialLength = benchmarkData.length;
+        benchmarkData = benchmarkData.filter(item => 
+            !(item.threads === threads && item.dataSize === dataSize && item.repeat === repeat)
+        );
+        
+        if (benchmarkData.length < initialLength) {
+            addLog(`Data benchmark untuk ${threads} thread (${dataSize.toLocaleString()} data, ${repeat}x) dihapus`, "warning");
+            updateBenchmarkTable();
+            updateChart();
+            updateAnalysisDisplay();
+            return true;
+        }
+        return false;
+    }
+    
+    // Hapus semua data benchmark
+    function clearAllBenchmarkData() {
+        if (benchmarkData.length > 0) {
+            benchmarkData = [];
+            addLog("Semua data benchmark telah dihapus", "warning");
+            updateBenchmarkTable();
+            updateChart();
+            updateAnalysisDisplay();
+        } else {
+            addLog("Tidak ada data benchmark yang bisa dihapus", "info");
+        }
+    }
+    
+    // Inisialisasi data dengan distribusi yang benar untuk semua thread
+    function initData() {
+        data = [];
+        dataArray.innerHTML = '';
+        
+        for (let i = 0; i < DATA_SIZE; i++) {
+            const value = Math.floor(Math.random() * 100) + 1;
+            data.push(value);
+            
+            const threadIndex = getThreadForDataIndex(i, THREAD_COUNT, DATA_SIZE);
+            
+            const dataItem = document.createElement('div');
+            dataItem.className = 'data-item';
+            dataItem.id = `data-${i}`;
+            dataItem.textContent = value;
+            dataItem.dataset.index = i;
+            dataItem.dataset.value = value;
+            dataItem.dataset.thread = threadIndex;
+            dataItem.setAttribute('data-thread', `T${threadIndex}`);
+            
+            dataItem.classList.add(`thread-${threadIndex}`);
+            
+            dataArray.appendChild(dataItem);
+        }
+    }
+    
+    // Inisialisasi thread containers
+    function initThreads() {
+        threadsContainer.innerHTML = '';
+        threadSums = new Array(THREAD_COUNT).fill(0);
+        
+        let gridColumns = 2;
+        if (THREAD_COUNT <= 2) gridColumns = 2;
+        else if (THREAD_COUNT <= 4) gridColumns = 2;
+        else if (THREAD_COUNT <= 6) gridColumns = 3;
+        else if (THREAD_COUNT <= 9) gridColumns = 3;
+        else gridColumns = 4;
+        
+        threadsContainer.style.gridTemplateColumns = `repeat(${gridColumns}, 1fr)`;
+        
+        for (let i = 0; i < THREAD_COUNT; i++) {
+            const threadBox = document.createElement('div');
+            threadBox.className = 'thread-box';
+            threadBox.id = `thread-${i}`;
+            
+            const threadHeader = document.createElement('div');
+            threadHeader.className = 'thread-header';
+            
+            const threadTitle = document.createElement('div');
+            threadTitle.className = 'thread-title';
+            threadTitle.innerHTML = `<i class="fas fa-microchip"></i> Thread`;
+            
+            const threadId = document.createElement('div');
+            threadId.className = 'thread-id';
+            threadId.textContent = `#${i}`;
+            
+            threadHeader.appendChild(threadTitle);
+            threadHeader.appendChild(threadId);
+            
+            const threadSum = document.createElement('div');
+            threadSum.className = 'thread-sum';
+            threadSum.id = `thread-sum-${i}`;
+            threadSum.textContent = '0';
+            
+            threadBox.appendChild(threadHeader);
+            threadBox.appendChild(threadSum);
+            threadsContainer.appendChild(threadBox);
+        }
+    }
+    
+    // Inisialisasi step indicator
+    function initStepIndicator() {
+        stepIndicator.innerHTML = '';
+        
+        for (let i = 0; i < STEPS.length; i++) {
+            const stepDot = document.createElement('div');
+            stepDot.className = 'step-dot';
+            stepDot.id = `step-dot-${i}`;
+            stepDot.title = STEPS[i];
+            stepIndicator.appendChild(stepDot);
+        }
+    }
+    
+    // Inisialisasi tabel benchmark
+    function initBenchmarkTable() {
+        updateBenchmarkTable();
+    }
+    
+    // Update tabel benchmark
+    function updateBenchmarkTable() {
+        benchmarkTableBody.innerHTML = '';
+        
+        let maxSpeedupValue = 0;
+        
+        if (benchmarkData.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="5" style="text-align: center; color: #a3b7ff; padding: 30px;">
+                    <i class="fas fa-chart-bar" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                    Belum ada data benchmark.<br>
+                    Jalankan visualisasi terlebih dahulu.
+                </td>
+            `;
+            benchmarkTableBody.appendChild(row);
+        } else {
+            const groupedData = {};
+            benchmarkData.forEach(item => {
+                const key = `${item.dataSize}_${item.repeat}`;
+                if (!groupedData[key]) {
+                    groupedData[key] = [];
+                }
+                groupedData[key].push(item);
+            });
+            
+            Object.keys(groupedData).forEach(key => {
+                const [dataSize, repeat] = key.split('_');
+                
+                const headerRow = document.createElement('tr');
+                headerRow.style.background = 'rgba(255, 209, 102, 0.1)';
+                headerRow.innerHTML = `
+                    <td colspan="5" style="text-align: center; color: #ffd166; font-weight: bold; padding: 10px;">
+                        <i class="fas fa-database"></i> Data: ${parseInt(dataSize).toLocaleString()} elemen | 
+                        <i class="fas fa-redo"></i> Pengulangan: ${repeat}x
+                    </td>
+                `;
+                benchmarkTableBody.appendChild(headerRow);
+                
+                const dataForGroup = groupedData[key];
+                dataForGroup.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="thread-count">${item.threads} Thread${item.threads > 1 ? 's' : ''}</td>
+                        <td class="time-cell">${item.time.toFixed(2)} ms</td>
+                        <td class="speedup-cell">${item.speedup.toFixed(2)}x</td>
+                        <td>${item.efficiency.toFixed(1)}%</td>
+                        <td>
+                            <button class="delete-btn" onclick="removeBenchmarkRow(${item.threads}, ${item.dataSize}, ${item.repeat})" style="background: #ff6b6b; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
+                                <i class="fas fa-trash"></i> Hapus
+                            </button>
+                        </td>
+                    `;
+                    benchmarkTableBody.appendChild(row);
+                    
+                    if (item.speedup > maxSpeedupValue) {
+                        maxSpeedupValue = item.speedup;
+                    }
+                });
+            });
+        }
+        
+        maxSpeedup.textContent = `${maxSpeedupValue.toFixed(2)}x`;
+        maxSpeedupChart.textContent = `${maxSpeedupValue.toFixed(2)}x`;
+        sequentialTimeInput.value = currentSequentialTime;
+    }
+    
+    // Fungsi global untuk menghapus baris
+    window.removeBenchmarkRow = function(threads, dataSize, repeat) {
+        if (removeBenchmarkData(threads, dataSize, repeat)) {
+            addLog(`Data untuk ${threads} thread dihapus`, "warning");
+        }
+    };
+    
+    // Inisialisasi grafik
+    function initChart() {
+        updateChart();
+    }
+    
+    // Update grafik
+    function updateChart() {
+        const maxScale = parseInt(maxScaleSelect.value);
+        chartGraph.innerHTML = `
+            <div class="chart-axis-y">
+                <div class="y-tick">${maxScale}x</div>
+                <div class="y-tick">${(maxScale*0.8).toFixed(1)}x</div>
+                <div class="y-tick">${(maxScale*0.6).toFixed(1)}x</div>
+                <div class="y-tick">${(maxScale*0.4).toFixed(1)}x</div>
+                <div class="y-tick">${(maxScale*0.2).toFixed(1)}x</div>
+                <div class="y-tick">0x</div>
+            </div>
+        `;
+        
+        if (benchmarkData.length === 0) {
+            const message = document.createElement('div');
+            message.style.position = 'absolute';
+            message.style.top = '50%';
+            message.style.left = '50%';
+            message.style.transform = 'translate(-50%, -50%)';
+            message.style.color = '#a3b7ff';
+            message.style.textAlign = 'center';
+            message.innerHTML = `
+                <i class="fas fa-chart-bar" style="font-size: 48px; margin-bottom: 20px; display: block;"></i>
+                <div style="font-size: 18px;">Belum ada data benchmark</div>
+                <div style="font-size: 14px; margin-top: 10px;">Jalankan visualisasi terlebih dahulu</div>
+            `;
+            chartGraph.appendChild(message);
+            chartTitle.textContent = "Belum ada data benchmark";
+        } else {
+            const idealLine = document.querySelector('.ideal-line');
+            if (showIdealLine.checked) {
+                idealLine.style.display = 'block';
+                idealLine.style.top = `${70 + (maxScale - 5) * 10}px`;
+            } else {
+                idealLine.style.display = 'none';
+            }
+            
+            const groupedData = {};
+            benchmarkData.forEach(item => {
+                const key = `${item.dataSize}_${item.repeat}`;
+                if (!groupedData[key]) {
+                    groupedData[key] = [];
+                }
+                groupedData[key].push(item);
+            });
+            
+            let barIndex = 0;
+            const groupKeys = Object.keys(groupedData);
+            
+            groupKeys.forEach((key, groupIndex) => {
+                const [dataSize, repeat] = key.split('_');
+                const dataForGroup = groupedData[key];
+                
+                dataForGroup.forEach((item, index) => {
+                    const bar = document.createElement('div');
+                    bar.className = 'chart-bar';
+                    bar.id = `chart-bar-${barIndex}`;
+                    bar.dataset.speedup = item.speedup;
+                    bar.dataset.threads = item.threads;
+                    bar.dataset.datasize = item.dataSize;
+                    bar.dataset.repeat = item.repeat;
+                    
+                    const totalBars = benchmarkData.length;
+                    const barWidth = 80 / totalBars;
+                    const barSpacing = 100 / (totalBars + 1);
+                    const leftPosition = (barIndex + 1) * barSpacing;
+                    
+                    bar.style.flex = `0 0 ${barWidth}%`;
+                    bar.style.margin = `0 ${barWidth * 0.1}%`;
+                    
+                    if (item.threads === THREAD_COUNT && item.dataSize === ACTUAL_N && item.repeat === REPEAT_COUNT) {
+                        bar.classList.add('active');
+                    }
+                    
+                    const heightPercent = (item.speedup / maxScale) * 100;
+                    bar.style.height = `${heightPercent}%`;
+                    
+                    const label = document.createElement('div');
+                    label.className = 'chart-bar-label';
+                    label.textContent = `${item.threads}T`;
+                    label.title = `${item.threads} Threads (${item.dataSize.toLocaleString()} data, ${item.repeat}x)`;
+                    
+                    const value = document.createElement('div');
+                    value.className = 'chart-bar-value';
+                    value.textContent = `${item.speedup.toFixed(2)}x`;
+                    value.title = `Speedup: ${item.speedup.toFixed(2)}x\nThreads: ${item.threads}\nData: ${item.dataSize.toLocaleString()}\nRepeat: ${item.repeat}x`;
+                    
+                    bar.appendChild(value);
+                    bar.appendChild(label);
+                    chartGraph.appendChild(bar);
+                    
+                    bar.addEventListener('mouseenter', () => {
+                        bar.style.opacity = '0.9';
+                        bar.style.transform = 'scale(1.05)';
+                        bar.style.zIndex = '10';
+                    });
+                    
+                    bar.addEventListener('mouseleave', () => {
+                        bar.style.opacity = '1';
+                        bar.style.transform = 'scale(1)';
+                        bar.style.zIndex = '1';
+                    });
+                    
+                    bar.addEventListener('click', () => {
+                        threadConfig.value = item.threads;
+                        dataConfig.value = item.dataSize;
+                        repeatConfig.value = item.repeat;
+                        onConfigChange();
+                        changeSlide(1);
+                        addLog(`Konfigurasi diubah ke ${item.threads} thread, ${item.dataSize.toLocaleString()} data, ${item.repeat}x pengulangan berdasarkan klik grafik`, "info");
+                    });
+                    
+                    barIndex++;
+                });
+                
+                if (groupIndex < groupKeys.length - 1) {
+                    const separator = document.createElement('div');
+                    separator.style.width = '2px';
+                    separator.style.height = '100%';
+                    separator.style.background = 'rgba(255, 255, 255, 0.2)';
+                    separator.style.margin = '0 20px';
+                    chartGraph.appendChild(separator);
+                    barIndex++;
+                }
+            });
+            
+            chartTitle.textContent = `Perbandingan Speedup untuk Berbagai Konfigurasi`;
+        }
+    }
+    
+    // Hapus grafik
+    function clearChart() {
+        clearAllBenchmarkData();
+    }
+    
+    // Animasikan grafik
+    function animateChart() {
+        const bars = document.querySelectorAll('.chart-bar');
+        bars.forEach((bar, index) => {
+            bar.style.height = '0';
+            bar.style.transition = 'height 0s';
+            
+            const speedup = parseFloat(bar.dataset.speedup);
+            const maxScale = parseInt(maxScaleSelect.value);
+            const heightPercent = (speedup / maxScale) * 100;
+            
+            setTimeout(() => {
+                bar.style.transition = 'height 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                bar.style.height = `${heightPercent}%`;
+                
+                if (parseInt(bar.dataset.threads) === THREAD_COUNT && 
+                    parseInt(bar.dataset.datasize) === ACTUAL_N &&
+                    parseInt(bar.dataset.repeat) === REPEAT_COUNT) {
+                    bar.classList.add('active');
+                }
+                
+            }, index * 300);
+        });
+        
+        addLog("Grafik benchmark di-animasikan", "success");
+    }
+    
+    // Analisis data benchmark
+    function analyzeBenchmarkData() {
+        if (benchmarkData.length === 0) {
+            addLog("Tidak ada data benchmark untuk dianalisis", "warning");
+            return;
+        }
+        
+        const currentConfigData = benchmarkData.filter(item => 
+            item.dataSize === ACTUAL_N && item.repeat === REPEAT_COUNT
+        );
+        if (currentConfigData.length < 2) {
+            addLog("Data benchmark tidak cukup untuk analisis", "warning");
+            return;
+        }
+        
+        const data = currentConfigData;
+        
+        let bestSpeedup = 0;
+        let bestEfficiency = 0;
+        let optimalThreads = 1;
+        
+        data.forEach(item => {
+            if (item.speedup > bestSpeedup) {
+                bestSpeedup = item.speedup;
+                optimalThreads = item.threads;
+            }
+            if (item.efficiency > bestEfficiency) {
+                bestEfficiency = item.efficiency;
+            }
+        });
+        
+        let bestP = 0.95;
+        let minError = Infinity;
+        
+        for (let p = 0.5; p <= 0.99; p += 0.01) {
+            let totalError = 0;
+            let count = 0;
+            
+            data.forEach(item => {
+                if (item.threads > 1) {
+                    const predictedSpeedup = 1 / ((1 - p) + (p / item.threads));
+                    const actualSpeedup = item.speedup / data.find(d => d.threads === 1)?.speedup || 1;
+                    totalError += Math.abs(predictedSpeedup - actualSpeedup);
+                    count++;
+                }
+            });
+            
+            if (count > 0) {
+                const avgError = totalError / count;
+                if (avgError < minError) {
+                    minError = avgError;
+                    bestP = p;
+                }
+            }
+        }
+        
+        let totalOverhead = 0;
+        let overheadCount = 0;
+        
+        data.forEach(item => {
+            if (item.threads > 1) {
+                const singleThreadTime = data.find(d => d.threads === 1)?.time || item.time * item.threads;
+                const idealTime = singleThreadTime / item.threads;
+                const overhead = ((item.time - idealTime) / idealTime) * 100;
+                totalOverhead += overhead;
+                overheadCount++;
+            }
+        });
+        
+        const avgOverhead = overheadCount > 0 ? (totalOverhead / overheadCount) : 1.5;
+        
+        analysisData = {
+            parallelFraction: bestP,
+            sequentialFraction: 1 - bestP,
+            overheadPerThread: avgOverhead / 100,
+            optimalThreads: optimalThreads,
+            bestSpeedup: bestSpeedup.toFixed(2),
+            maxEfficiency: bestEfficiency.toFixed(1)
+        };
+        
+        updateAnalysisDisplay();
+        
+        addLog("=== ANALISIS DATA BENCHMARK ===", "warning");
+        addLog(`Parallel Fraction (p): ${(bestP * 100).toFixed(1)}%`, "info");
+        addLog(`Sequential Fraction (1-p): ${((1 - bestP) * 100).toFixed(1)}%`, "info");
+        addLog(`Thread Optimal: ${optimalThreads} (Speedup: ${bestSpeedup.toFixed(2)}x)`, "success");
+        addLog(`Efisiensi Maksimal: ${bestEfficiency.toFixed(1)}%`, "success");
+        
+        const data16 = data.find(item => item.threads === 16);
+        const data8 = data.find(item => item.threads === 8);
+        const data4 = data.find(item => item.threads === 4);
+        
+        if (data16 && data8 && data4) {
+            const improvement4to8 = data8.speedup - data4.speedup;
+            const improvement8to16 = data16.speedup - data8.speedup;
+            const efficiencyDrop = data8.efficiency - data16.efficiency;
+            
+            if (improvement8to16 < improvement4to8 * 0.3) {
+                addLog("⚠️ DIMINISHING RETURNS DETEKSI: 8→16 thread memberikan peningkatan kecil", "warning");
+                addLog(`Peningkatan 4→8 thread: +${improvement4to8.toFixed(2)}x`, "warning");
+                addLog(`Peningkatan 8→16 thread: +${improvement8to16.toFixed(2)}x`, "warning");
+                addLog(`Penurunan efisiensi: ${efficiencyDrop.toFixed(1)}%`, "warning");
+            }
+        }
+    }
+    
+    // Update tampilan analisis
+    function updateAnalysisDisplay() {
+        parallelFraction.textContent = `${(analysisData.parallelFraction * 100).toFixed(1)}%`;
+        sequentialFraction.textContent = `${(analysisData.sequentialFraction * 100).toFixed(1)}%`;
+        threadOverhead.textContent = `${(analysisData.overheadPerThread * 100).toFixed(1)}%`;
+        optimalThreads.textContent = `${analysisData.optimalThreads} threads`;
+        bestSpeedup.textContent = `${analysisData.bestSpeedup}x`;
+        maxEfficiency.textContent = `${analysisData.maxEfficiency}%`;
+        avgEfficiency.textContent = `${analysisData.maxEfficiency}%`;
+        
+        const analysisDiv = document.getElementById('benchmarkAnalysis');
+        if (benchmarkData.length === 0) {
+            analysisDiv.innerHTML = `
+                <div style="text-align: center; color: #a3b7ff; padding: 20px;">
+                    <i class="fas fa-chart-bar" style="font-size: 48px; margin-bottom: 15px; display: block;"></i>
+                    Jalankan benchmark terlebih dahulu untuk melihat analisis
+                </div>
+            `;
+        } else {
+            const currentConfigData = benchmarkData.filter(item => 
+                item.dataSize === ACTUAL_N && item.repeat === REPEAT_COUNT
+            );
+            
+            let analysisHTML = '<div class="thread-comparison">';
+            
+            currentConfigData.forEach(item => {
+                const isBest = item.threads === analysisData.optimalThreads;
+                const isWorst = item.threads === 16 && item.efficiency < 50;
+                
+                analysisHTML += `
+                    <div class="thread-card ${isBest ? 'best' : ''} ${isWorst ? 'worst' : ''}">
+                        <div class="thread-count-card">${item.threads} Thread${item.threads > 1 ? 's' : ''}</div>
+                        <div class="thread-performance">
+                            <div>Speedup: <strong>${item.speedup.toFixed(2)}x</strong></div>
+                            <div>Efisiensi: <strong>${item.efficiency.toFixed(1)}%</strong></div>
+                            <div style="font-size: 12px; margin-top: 5px;">${isBest ? '⭐ Optimal' : isWorst ? '⚠️ Diminishing' : ''}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            analysisHTML += '</div>';
+            
+            const data16 = currentConfigData.find(item => item.threads === 16);
+            const data8 = currentConfigData.find(item => item.threads === 8);
+            
+            if (data16 && data8) {
+                const efficiencyDrop = data8.efficiency - data16.efficiency;
+                const speedupGain = data16.speedup - data8.speedup;
+                const relativeGain = (speedupGain / data8.speedup * 100).toFixed(1);
+                
+                analysisHTML += `
+                    <div class="highlight-box" style="margin-top: 15px; background: rgba(255, 126, 80, 0.1); border-color: #ff7f50;">
+                        <div class="explanation-title" style="color: #ff7f50;">
+                            <i class="fas fa-exclamation-triangle"></i> Analisis 16 Thread
+                        </div>
+                        <div class="explanation-content">
+                            • Penambahan dari 8→16 thread: <strong>+${speedupGain.toFixed(2)}x</strong> (${relativeGain}%)<br>
+                            • Penurunan efisiensi: <strong>${efficiencyDrop.toFixed(1)}%</strong><br>
+                            • Efisiensi 16 thread: <strong>${data16.efficiency.toFixed(1)}%</strong> vs Ideal 100%<br>
+                            • Overhead meningkat: <strong>${(analysisData.overheadPerThread * 100).toFixed(1)}%</strong> per thread
+                        </div>
+                    </div>
+                `;
+            }
+            
+            analysisDiv.innerHTML = analysisHTML;
+        }
+    }
+    
+    // Jalankan benchmark lengkap
+    function runFullBenchmark() {
+        addLog("=== MENJALANKAN BENCHMARK LENGKAP ===", "warning");
+        addLog("Menguji performa untuk berbagai jumlah thread...", "info");
+        
+        const savedThreadCount = THREAD_COUNT;
+        const savedDataSize = ACTUAL_N;
+        const savedRepeat = REPEAT_COUNT;
+        
+        const threadCountsToTest = [1, 2, 4, 8, 16];
+        
+        const seqTime = parseFloat(calculateSequentialTime());
+        addLog(`Waktu Sequential (KONSTAN): ${seqTime.toFixed(2)} ms`, "info");
+        addLog(`Ukuran Data: ${ACTUAL_N.toLocaleString()} elemen`, "info");
+        addLog(`Pengulangan: ${REPEAT_COUNT}x`, "info");
+        
+        threadCountsToTest.forEach((threadCount, index) => {
+            setTimeout(() => {
+                THREAD_COUNT = threadCount;
+                
+                const parTime = parseFloat(calculateParallelTime());
+                const speedup = (seqTime / parTime).toFixed(2);
+                const efficiency = ((speedup / threadCount) * 100).toFixed(1);
+                
+                const existingIndex = benchmarkData.findIndex(item => 
+                    item.threads === threadCount && item.dataSize === ACTUAL_N && item.repeat === REPEAT_COUNT
+                );
+                
+                if (existingIndex >= 0) {
+                    benchmarkData[existingIndex] = {
+                        threads: threadCount,
+                        time: parTime,
+                        speedup: parseFloat(speedup),
+                        efficiency: parseFloat(efficiency),
+                        dataSize: ACTUAL_N,
+                        repeat: REPEAT_COUNT,
+                        timestamp: new Date().toISOString()
+                    };
+                } else {
+                    benchmarkData.push({
+                        threads: threadCount,
+                        time: parTime,
+                        speedup: parseFloat(speedup),
+                        efficiency: parseFloat(efficiency),
+                        dataSize: ACTUAL_N,
+                        repeat: REPEAT_COUNT,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                
+                addLog(`Thread ${threadCount}: ${parTime.toFixed(2)} ms (Speedup: ${speedup}x)`, "info");
+                
+                if (index === threadCountsToTest.length - 1) {
+                    THREAD_COUNT = savedThreadCount;
+                    ACTUAL_N = savedDataSize;
+                    REPEAT_COUNT = savedRepeat;
+                    
+                    calculateExecutionTimes();
+                    benchmarkData.sort((a, b) => a.threads - b.threads);
+                    
+                    updateBenchmarkTable();
+                    updateChart();
+                    animateChart();
+                    updateSpeedup();
+                    analyzeBenchmarkData();
+                    
+                    addLog("=== BENCHMARK LENGKAP SELESAI ===", "success");
+                }
+            }, index * 1000);
+        });
+    }
+    
+    // Reset log
+    function resetLog() {
+        logContainer.innerHTML = '';
+        logEntries = [];
+        addLog("Log telah direset", "info");
+    }
+    
+    // Reset lengkap
+    function resetAll() {
+        resetLog();
+        clearAllBenchmarkData();
+        
+        isRunning = false;
+        isAutoMode = false;
+        simulationRunning = false;
+        currentStep = 0;
+        
+        animationTimeouts.forEach(timeout => clearTimeout(timeout));
+        animationTimeouts = [];
+        
+        clearTimeout(autoInterval);
+        resetTimer();
+        
+        addLog("=== SISTEM DIREFRESH LENGKAP ===", "warning");
+        updateControls();
+        
+        document.querySelectorAll('.data-item').forEach(item => {
+            for (let t = 0; t <= 15; t++) {
+                item.classList.remove(`thread-${t}`);
+            }
+            item.classList.remove('active', 'processed');
+            item.style.opacity = '1';
+            item.style.transform = 'scale(1)';
+        });
+        
+        document.querySelectorAll('.thread-box').forEach(box => {
+            box.classList.remove('active');
+            box.style.boxShadow = "";
+        });
+        
+        for (let i = 0; i < THREAD_COUNT; i++) {
+            const threadSumElem = document.getElementById(`thread-sum-${i}`);
+            if (threadSumElem) {
+                threadSumElem.textContent = '0';
+                threadSumElem.classList.remove('updated');
+                threadSumElem.style.color = '#ffd166';
+                threadSumElem.style.transform = 'scale(1)';
+            }
+        }
+        
+        threadSums = new Array(THREAD_COUNT).fill(0);
+        speedupValue.style.color = '#6bff7a';
+        speedupValue.style.transform = 'scale(1)';
+        
+        for (let i = 1; i <= 74; i++) {
+            const codeLine = document.getElementById(`codeLine${i}`);
+            if (codeLine) {
+                codeLine.classList.remove('highlight');
+            }
+        }
+        
+        updateStepDisplay();
+        
+        addLog("=== SISTEM VISUALISASI PARALLEL SUM REDUCTION DENGAN OpenMP ===", "info");
+        addLog(`Konfigurasi saat ini:`, "info");
+        addLog(`- Jumlah thread: ${THREAD_COUNT}`, "info");
+        addLog(`- Ukuran data: ${ACTUAL_N.toLocaleString()} elemen`, "info");
+        addLog(`- Pengulangan: ${REPEAT_COUNT}x (averaging)`, "info");
+        addLog(`- Metode: Parallel reduction menggunakan #pragma omp parallel for`, "info");
+        addLog("Siap memulai visualisasi langkah-demi-langkah...", "success");
+    }
+    
+    // Tambah log entry
+    function addLog(message, type = "info") {
+        const logEntry = document.createElement('div');
+        logEntry.className = `log-entry ${type}`;
+        
+        const now = new Date();
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        
+        logEntry.innerHTML = `
+            <span class="log-time">${timeStr}</span>
+            <span class="log-message">${message}</span>
+        `;
+        
+        logContainer.appendChild(logEntry);
+        logEntries.push({ time: timeStr, message, type });
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+    
+    // Update speedup display
+    function updateSpeedup() {
+        const speedup = (currentSequentialTime / currentParallelTime).toFixed(2);
+        
+        speedupValue.textContent = `${speedup}x`;
+        sequentialTimeElem.textContent = `${currentSequentialTime}ms`;
+        parallelTimeElem.textContent = `${currentParallelTime}ms`;
+        threadCountElem.textContent = THREAD_COUNT;
+        repeatCountElem.textContent = REPEAT_COUNT;
+        
+        sequentialTimeInput.value = currentSequentialTime;
+        currentRepeatInput.value = REPEAT_COUNT;
+    }
+    
+    // Update step display
+    function updateStepDisplay() {
+        if (currentStep >= 0 && currentStep < STEPS.length) {
+            currentStepText.textContent = `Langkah ${currentStep+1}/${STEPS.length}: ${STEPS[currentStep]}`;
+        }
+        
+        const stepDots = document.querySelectorAll('.step-dot');
+        for (let i = 0; i < stepDots.length; i++) {
+            const stepDot = stepDots[i];
+            stepDot.classList.remove('active', 'completed');
+            
+            if (i < currentStep) {
+                stepDot.classList.add('completed');
+            } else if (i === currentStep) {
+                stepDot.classList.add('active');
+            }
+        }
+        
+        updateProgress();
+    }
+    
+    // Update progress bar
+    function updateProgress() {
+        const progress = (currentStep / (STEPS.length - 1)) * 100;
+        progressFill.style.width = `${progress}%`;
+    }
+    
+    // Ganti slide
+    function changeSlide(slideNumber) {
+        currentSlide = slideNumber;
+        
+        document.querySelectorAll('.slide').forEach(slide => {
+            slide.classList.remove('active');
+        });
+        
+        document.getElementById(`slide${slideNumber}`).classList.add('active');
+        
+        document.querySelectorAll('.slide-dot').forEach((dot, index) => {
+            dot.classList.remove('active');
+            const slideIndex = parseInt(dot.dataset.slide);
+            if (slideIndex === slideNumber) {
+                dot.classList.add('active');
+            }
+        });
+        
+        if (slideNumber === 4) {
+            updateBenchmarkTable();
+            addLog(`Berpindah ke halaman Tabel Benchmark`, "info");
+        } else if (slideNumber === 5) {
+            updateChart();
+            setTimeout(animateChart, 500);
+            addLog(`Berpindah ke halaman Grafik Benchmark`, "info");
+        } else if (slideNumber === 6) {
+            analyzeBenchmarkData();
+            updateAnalysisDisplay();
+            addLog(`Berpindah ke halaman Analisis dan Kesimpulan`, "info");
+        } else if (slideNumber === 2) {
+            addLog("Berpindah ke halaman Penjelasan Kode Program", "info");
+        } else if (slideNumber === 3) {
+            addLog("Berpindah ke halaman Konsep Paralelisasi", "info");
+        } else {
+            addLog("Berpindah ke halaman Visualisasi", "info");
+        }
+    }
+    
+    // Handle perubahan konfigurasi
+    function onConfigChange() {
+        THREAD_COUNT = parseInt(threadConfig.value);
+        ACTUAL_N = parseInt(dataConfig.value);
+        REPEAT_COUNT = parseInt(repeatConfig.value);
+        
+        isRunning = false;
+        isAutoMode = false;
+        currentStep = 0;
+        simulationRunning = false;
+        
+        animationTimeouts.forEach(timeout => clearTimeout(timeout));
+        animationTimeouts = [];
+        
+        clearTimeout(autoInterval);
+        resetTimer();
+        
+        updateSteps();
+        initData();
+        initThreads();
+        initStepIndicator();
+        
+        calculateExecutionTimes();
+        
+        updateStepDisplay();
+        updateControls();
+        
+        addLog(`Konfigurasi diubah: ${THREAD_COUNT} thread, ${ACTUAL_N.toLocaleString()} elemen data, ${REPEAT_COUNT}x pengulangan`, "warning");
+        addLog(`Waktu Sequential (KONSTAN): ${currentSequentialTime}ms`, "info");
+        addLog(`Waktu Parallel (estimasi): ${currentParallelTime}ms`, "info");
+        addLog(`Speedup (estimasi): ${(currentSequentialTime / currentParallelTime).toFixed(2)}x`, "info");
+    }
+    
+    // Update kontrol button state
+    function updateControls() {
+        if (isRunning) {
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            nextStepBtn.disabled = true;
+            startBtn.innerHTML = '<i class="fas fa-play"></i> Berjalan';
+            pauseBtn.innerHTML = isAutoMode ? '<i class="fas fa-pause"></i> Jeda' : '<i class="fas fa-play"></i> Lanjut';
+        } else {
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            nextStepBtn.disabled = false;
+            startBtn.innerHTML = '<i class="fas fa-play"></i> Mulai (Auto)';
+            pauseBtn.innerHTML = '<i class="fas fa-pause"></i> Jeda';
+        }
+        
+        speedSlider.disabled = isRunning && isAutoMode;
+    }
+    
+    // Mulai eksekusi
+    function startExecution() {
+        if (isRunning || simulationRunning) return;
+        
+        simulationRunning = true;
+        isRunning = true;
+        isAutoMode = true;
+        currentStep = 0;
+        
+        addLog("=== MEMULAI VISUALISASI EKSEKUSI PROGRAM C ===", "warning");
+        addLog("Mode: Otomatis (akan berjalan melalui semua langkah)", "info");
+        updateControls();
+        startTimer();
+        
+        executeStep(0);
+    }
+    
+    // Jeda eksekusi
+    function pauseExecution() {
+        if (!isRunning) return;
+        
+        isRunning = false;
+        clearTimeout(autoInterval);
+        
+        animationTimeouts.forEach(timeout => clearTimeout(timeout));
+        animationTimeouts = [];
+        
+        addLog("Eksekusi dijeda", "warning");
+        updateControls();
+        stopTimer();
+    }
+    
+    // Lanjutkan eksekusi
+    function resumeExecution() {
+        if (isRunning) return;
+        
+        isRunning = true;
+        isAutoMode = true;
+        
+        addLog("Eksekusi dilanjutkan", "warning");
+        updateControls();
+        startTimer();
+        
+        executeStep(currentStep);
+    }
+    
+    // Eksekusi langkah tertentu
+    function executeStep(step) {
+        if (step < 0 || step >= STEPS.length) return;
+        
+        currentStep = step;
+        updateStepDisplay();
+        highlightCodeForStep(step);
+        
+        switch(step) {
+            case 0:
+                executeStep0();
+                break;
+            case 1:
+                executeStep1();
+                break;
+            case 2:
+                executeStep2();
+                break;
+            case 3:
+                executeStep3();
+                break;
+            case 4:
+                executeStep4();
+                break;
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+            case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 15:
+            case 16:
+            case 17:
+            case 18:
+            case 19:
+            case 20:
+                if (step >= 5 && step < 5 + THREAD_COUNT) {
+                    const threadIndex = step - 5;
+                    executeThreadCalculation(threadIndex);
+                } else if (step === 5 + THREAD_COUNT) {
+                    executeCombineResults();
+                } else if (step === 6 + THREAD_COUNT) {
+                    executeCalculateSpeedup();
+                } else if (step === 7 + THREAD_COUNT) {
+                    executeCleanup();
+                }
+                break;
+            default:
+                addLog(`Eksekusi: ${STEPS[step]}`, "info");
+                scheduleNextStep(step);
+                break;
+        }
+    }
+    
+    // Highlight kode berdasarkan langkah
+    function highlightCodeForStep(step) {
+        for (let i = 1; i <= 74; i++) {
+            const codeLine = document.getElementById(`codeLine${i}`);
+            if (codeLine) {
+                codeLine.classList.remove('highlight');
+            }
+        }
+        
+        if (step === 0) {
+            document.getElementById(`codeLine10`).classList.add('highlight');
+        } else if (step === 1) {
+            document.getElementById(`codeLine13`).classList.add('highlight');
+        } else if (step === 2) {
+            document.getElementById(`codeLine16`).classList.add('highlight');
+        } else if (step === 3) {
+            document.getElementById(`codeLine27`).classList.add('highlight');
+        } else if (step === 4) {
+            document.getElementById(`codeLine48`).classList.add('highlight');
+        } else if (step >= 5 && step < 5 + THREAD_COUNT) {
+            document.getElementById(`codeLine50`).classList.add('highlight');
+        } else if (step === 5 + THREAD_COUNT) {
+            document.getElementById(`codeLine56`).classList.add('highlight');
+        } else if (step === 6 + THREAD_COUNT) {
+            document.getElementById(`codeLine68`).classList.add('highlight');
+        } else if (step === 7 + THREAD_COUNT) {
+            document.getElementById(`codeLine72`).classList.add('highlight');
+        }
+    }
+    
+    // Langkah 0: Inisialisasi
+    function executeStep0() {
+        addLog("=== LANGKAH 1: INISIALISASI PROGRAM ===", "warning");
+        addLog("Mengalokasikan memori untuk data...", "info");
+        
+        for (let i = 0; i < THREAD_COUNT; i++) {
+            const threadSumElem = document.getElementById(`thread-sum-${i}`);
+            if (threadSumElem) {
+                threadSumElem.textContent = '0';
+            }
+        }
+        
+        document.querySelectorAll('.data-item').forEach(item => {
+            for (let t = 0; t <= 15; t++) {
+                item.classList.remove(`thread-${t}`);
+            }
+            item.classList.remove('active', 'processed');
+            item.style.opacity = '1';
+            item.style.transform = 'scale(1)';
+        });
+        
+        document.querySelectorAll('.thread-box').forEach(box => {
+            box.classList.remove('active');
+            box.style.boxShadow = '';
+        });
+        
+        threadSums = new Array(THREAD_COUNT).fill(0);
+        
+        addLog("Memori berhasil dialokasikan", "success");
+        scheduleNextStep(0);
+    }
+    
+    // Langkah 1: Random seed
+    function executeStep1() {
+        addLog("=== LANGKAH 2: INISIALISASI RANDOM SEED ===", "warning");
+        addLog("Menginisialisasi random seed dengan srand(time(NULL))...", "info");
+        
+        setTimeout(() => {
+            addLog("Random seed berhasil diinisialisasi", "success");
+            addLog("Data akan berbeda setiap eksekusi", "info");
+            scheduleNextStep(1);
+        }, 1000);
+    }
+    
+    // Langkah 2: Mengisi data
+    function executeStep2() {
+        addLog("=== LANGKAH 3: INISIALISASI DATA ===", "warning");
+        addLog(`Mengisi data dengan nilai acak (rand() % 100)...`, "info");
+        
+        const itemsPerThread = Math.floor(DATA_SIZE / THREAD_COUNT);
+        const remainder = DATA_SIZE % THREAD_COUNT;
+        
+        let cumulativeItems = 0;
+        for (let threadIndex = 0; threadIndex < THREAD_COUNT; threadIndex++) {
+            const itemsForThisThread = itemsPerThread + (threadIndex < remainder ? 1 : 0);
+            
+            for (let i = cumulativeItems; i < cumulativeItems + itemsForThisThread; i++) {
+                const timeout = setTimeout(() => {
+                    const dataItem = document.getElementById(`data-${i}`);
+                    if (dataItem) {
+                        dataItem.classList.add('active');
+                        dataItem.classList.add(`thread-${threadIndex}`);
+                        
+                        setTimeout(() => {
+                            dataItem.classList.remove('active');
+                        }, 300);
+                    }
+                }, i * (800 / speed));
+                
+                animationTimeouts.push(timeout);
+            }
+            
+            cumulativeItems += itemsForThisThread;
+        }
+        
+        setTimeout(() => {
+            addLog(`Data berhasil diinisialisasi: ${ACTUAL_N.toLocaleString()} elemen`, "success");
+            scheduleNextStep(2);
+        }, DATA_SIZE * (800 / speed) + 500);
+    }
+    
+    // Langkah 3: Sequential sum
+    function executeStep3() {
+        addLog("=== LANGKAH 4: EKSEKUSI SEQUENTIAL DENGAN AVERAGING ===", "warning");
+        addLog(`Memulai perhitungan sequential sum (${REPEAT_COUNT}x pengulangan)...`, "info");
+        
+        let seqSum = 0;
+        
+        for (let repeat = 0; repeat < REPEAT_COUNT; repeat++) {
+            addLog(`Pengulangan ${repeat + 1}/${REPEAT_COUNT}...`, "info");
+            
+            for (let i = 0; i < DATA_SIZE; i++) {
+                const timeout = setTimeout(() => {
+                    const dataItem = document.getElementById(`data-${i}`);
+                    if (dataItem) {
+                        dataItem.classList.add('active');
+                        
+                        seqSum += data[i];
+                        
+                        setTimeout(() => {
+                            dataItem.classList.remove('active');
+                            dataItem.classList.add('processed');
+                        }, 200);
+                    }
+                }, (repeat * DATA_SIZE + i) * (300 / speed));
+                
+                animationTimeouts.push(timeout);
+            }
+        }
+        
+        setTimeout(() => {
+            addLog(`Perhitungan sequential selesai: jumlah = ${seqSum}`, "success");
+            addLog(`Waktu sequential (rata-rata ${REPEAT_COUNT}x): ${currentSequentialTime} ms`, "success");
+            scheduleNextStep(3);
+        }, (REPEAT_COUNT * DATA_SIZE) * (300 / speed) + 500);
+    }
+    
+    // Langkah 4: Parallel reduction
+    function executeStep4() {
+        addLog("=== LANGKAH 5: EKSEKUSI PARALLEL REDUCTION DENGAN AVERAGING ===", "warning");
+        addLog(`Memulai perhitungan parallel dengan OpenMP (${REPEAT_COUNT}x pengulangan)...`, "info");
+        addLog("Membagi data ke dalam thread...", "info");
+        
+        for (let i = 0; i < THREAD_COUNT; i++) {
+            const threadBox = document.getElementById(`thread-${i}`);
+            if (threadBox) {
+                threadBox.classList.add('active');
+            }
+        }
+        
+        scheduleNextStep(4);
+    }
+    
+    // Thread calculation
+    function executeThreadCalculation(threadIndex) {
+        addLog(`=== LANGKAH ${6 + threadIndex}: THREAD ${threadIndex} BERJALAN ===`, "warning");
+        addLog(`Thread ${threadIndex} mulai menjumlahkan data bagiannya...`, "info");
+        
+        const threadBox = document.getElementById(`thread-${threadIndex}`);
+        if (threadBox) {
+            threadBox.style.boxShadow = "0 0 30px rgba(255, 126, 80, 0.8)";
+        }
+        
+        const { startIdx, endIdx } = getDataRangeForThread(threadIndex, THREAD_COUNT, DATA_SIZE);
+        
+        let sum = 0;
+        let processedCount = 0;
+        
+        for (let i = startIdx; i < endIdx; i++) {
+            const timeout = setTimeout(() => {
+                const dataItem = document.getElementById(`data-${i}`);
+                if (dataItem) {
+                    dataItem.classList.add('active');
+                    
+                    sum += data[i];
+                    threadSums[threadIndex] = sum;
+                    
+                    const threadSumElem = document.getElementById(`thread-sum-${threadIndex}`);
+                    if (threadSumElem) {
+                        threadSumElem.textContent = sum;
+                        threadSumElem.classList.add('updated');
+                    }
+                    
+                    setTimeout(() => {
+                        if (dataItem) {
+                            dataItem.classList.remove('active');
+                            dataItem.classList.add('processed');
+                        }
+                        if (threadSumElem) {
+                            threadSumElem.classList.remove('updated');
+                        }
+                    }, 200);
+                    
+                    processedCount++;
+                    
+                    if (processedCount === (endIdx - startIdx)) {
+                        setTimeout(() => {
+                            if (threadBox) {
+                                threadBox.style.boxShadow = "";
+                            }
+                            addLog(`Thread ${threadIndex} selesai: jumlah = ${sum}`, "success");
+                            scheduleNextStep(5 + threadIndex);
+                        }, 500);
+                    }
+                }
+            }, (i - startIdx) * (600 / speed));
+            
+            animationTimeouts.push(timeout);
+        }
+        
+        if (startIdx >= DATA_SIZE) {
+            setTimeout(() => {
+                if (threadBox) {
+                    threadBox.style.boxShadow = "";
+                }
+                addLog(`Thread ${threadIndex} selesai: tidak ada data`, "info");
+                scheduleNextStep(5 + threadIndex);
+            }, 500);
+        }
+    }
+    
+    // Combine results
+    function executeCombineResults() {
+        addLog("=== MENGGABUNGKAN HASIL DARI SEMUA THREAD ===", "warning");
+        addLog("Menggabungkan hasil dari semua thread...", "info");
+        
+        let total = threadSums.reduce((sum, val) => sum + val, 0);
+        
+        for (let t = 0; t < THREAD_COUNT; t++) {
+            const timeout = setTimeout(() => {
+                const threadSumElem = document.getElementById(`thread-sum-${t}`);
+                if (threadSumElem) {
+                    threadSumElem.style.color = "#ff7f50";
+                    threadSumElem.style.transform = "scale(1.4)";
+                    
+                    setTimeout(() => {
+                        threadSumElem.style.color = "#ffd166";
+                        threadSumElem.style.transform = "scale(1)";
+                    }, 400);
+                }
+            }, t * (400 / speed));
+            
+            animationTimeouts.push(timeout);
+        }
+        
+        setTimeout(() => {
+            addLog(`Hasil parallel reduction: ${total}`, "success");
+            addLog(`Waktu parallel (rata-rata ${REPEAT_COUNT}x): ${currentParallelTime} ms`, "success");
+            scheduleNextStep(5 + THREAD_COUNT);
+        }, THREAD_COUNT * (400 / speed) + 1000);
+    }
+    
+    // Calculate speedup
+    function executeCalculateSpeedup() {
+        addLog("=== MENGHITUNG SPEEDUP DAN EFISIENSI ===", "warning");
+        addLog("Menghitung speedup dan efisiensi...", "info");
+        
+        const speedup = (currentSequentialTime / currentParallelTime).toFixed(2);
+        const efficiency = ((speedup / THREAD_COUNT) * 100).toFixed(1);
+        
+        setTimeout(() => {
+            speedupValue.style.transform = "scale(1.3)";
+            speedupValue.style.color = "#ffd166";
+            
+            setTimeout(() => {
+                speedupValue.style.transform = "scale(1)";
+                speedupValue.style.color = "#6bff7a";
+            }, 500);
+            
+            addLog(`Speedup: ${currentSequentialTime} ms / ${currentParallelTime} ms = ${speedup}x`, "success");
+            addLog(`Efisiensi: (${speedup}x / ${THREAD_COUNT} thread) × 100% = ${efficiency}%`, "success");
+            
+            updateBenchmarkData();
+            scheduleNextStep(6 + THREAD_COUNT);
+        }, 1000);
+    }
+    
+    // Cleanup
+    function executeCleanup() {
+        addLog("=== MEMBERSIHKAN MEMORI ===", "warning");
+        addLog("Membersihkan memori yang dialokasikan...", "info");
+        
+        document.querySelectorAll('.data-item').forEach((item, index) => {
+            const timeout = setTimeout(() => {
+                item.style.opacity = '0.3';
+                item.style.transform = 'scale(0.8)';
+            }, index * 30);
+            
+            animationTimeouts.push(timeout);
+        });
+        
+        setTimeout(() => {
+            addLog("Memori berhasil dibersihkan", "success");
+            addLog("=== PROGRAM SELESAI ===", "success");
+            scheduleNextStep(7 + THREAD_COUNT);
+        }, DATA_SIZE * 30 + 500);
+    }
+    
+    // Schedule next step
+    function scheduleNextStep(currentStepIndex) {
+        if (isAutoMode && isRunning && currentStepIndex < STEPS.length - 1) {
+            const delay = 1000 / speed;
+            
+            clearTimeout(autoInterval);
+            autoInterval = setTimeout(() => {
+                executeStep(currentStepIndex + 1);
+            }, delay);
+        } else if (currentStepIndex === STEPS.length - 1) {
+            isRunning = false;
+            isAutoMode = false;
+            simulationRunning = false;
+            updateControls();
+            stopTimer();
+            addLog("=== VISUALISASI SELESAI ===", "success");
+            addLog(`Total waktu visualisasi: ${executionTime.toFixed(2)} detik`, "info");
+        }
+    }
+    
+    // Langkah berikutnya (manual)
+    function nextStep() {
+        if (isRunning && isAutoMode) {
+            pauseExecution();
+            return;
+        }
+        
+        if (!simulationRunning) {
+            simulationRunning = true;
+            isRunning = true;
+            startTimer();
+        }
+        
+        isAutoMode = false;
+        
+        if (currentStep >= STEPS.length - 1) {
+            currentStep = 0;
+            addLog("=== MULAI DARI AWAL (MODE MANUAL) ===", "warning");
+        } else {
+            currentStep++;
+        }
+        
+        addLog(`Eksekusi manual: ${STEPS[currentStep]}`, "info");
+        updateControls();
+        
+        executeStep(currentStep);
+        
+        isRunning = false;
+        stopTimer();
+        simulationRunning = false;
+    }
+    
+    // Reset eksekusi
+    function resetExecution() {
+        isRunning = false;
+        isAutoMode = false;
+        simulationRunning = false;
+        currentStep = 0;
+        
+        animationTimeouts.forEach(timeout => clearTimeout(timeout));
+        animationTimeouts = [];
+        
+        clearTimeout(autoInterval);
+        resetTimer();
+        
+        addLog("=== VISUALISASI DIRESET ===", "warning");
+        updateControls();
+        
+        document.querySelectorAll('.data-item').forEach(item => {
+            for (let t = 0; t <= 15; t++) {
+                item.classList.remove(`thread-${t}`);
+            }
+            item.classList.remove('active', 'processed');
+            item.style.opacity = '1';
+            item.style.transform = 'scale(1)';
+        });
+        
+        document.querySelectorAll('.thread-box').forEach(box => {
+            box.classList.remove('active');
+            box.style.boxShadow = "";
+        });
+        
+        for (let i = 0; i < THREAD_COUNT; i++) {
+            const threadSumElem = document.getElementById(`thread-sum-${i}`);
+            if (threadSumElem) {
+                threadSumElem.textContent = '0';
+                threadSumElem.classList.remove('updated');
+                threadSumElem.style.color = '#ffd166';
+                threadSumElem.style.transform = 'scale(1)';
+            }
+        }
+        
+        threadSums = new Array(THREAD_COUNT).fill(0);
+        speedupValue.style.color = '#6bff7a';
+        speedupValue.style.transform = 'scale(1)';
+        
+        for (let i = 1; i <= 74; i++) {
+            const codeLine = document.getElementById(`codeLine${i}`);
+            if (codeLine) {
+                codeLine.classList.remove('highlight');
+            }
+        }
+        
+        updateStepDisplay();
+        addLog("Visualisasi telah direset ke keadaan awal", "success");
+    }
+    
+    // Reset lengkap
+    function resetComplete() {
+        resetAll();
+    }
+    
+    // Stop eksekusi
+    function stopExecution() {
+        isRunning = false;
+        isAutoMode = false;
+        simulationRunning = false;
+        
+        animationTimeouts.forEach(timeout => clearTimeout(timeout));
+        animationTimeouts = [];
+        
+        clearTimeout(autoInterval);
+        stopTimer();
+        
+        addLog("=== EKSEKUSI DIHENTIKAN ===", "error");
+        updateControls();
+    }
+    
+    // Update timer
+    function updateTimer() {
+        if (isRunning) {
+            executionTime = (Date.now() - startTime) / 1000;
+            timerDisplay.textContent = `Waktu: ${executionTime.toFixed(2)}s`;
+        }
+    }
+    
+    // Mulai timer
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimer, 100);
+    }
+    
+    // Stop timer
+    function stopTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        updateTimer();
+    }
+    
+    // Reset timer
+    function resetTimer() {
+        stopTimer();
+        executionTime = 0;
+        timerDisplay.textContent = "Waktu: 0.0s";
+    }
+    
+    // Event Listeners
+    startBtn.addEventListener('click', startExecution);
+    pauseBtn.addEventListener('click', () => {
+        if (isRunning && isAutoMode) {
+            pauseExecution();
+        } else if (!isRunning) {
+            resumeExecution();
+        }
+    });
+    nextStepBtn.addEventListener('click', nextStep);
+    resetBtn.addEventListener('click', resetComplete);
+    stopBtn.addEventListener('click', stopExecution);
+    explainCodeBtn.addEventListener('click', () => changeSlide(2));
+    
+    speedSlider.addEventListener('input', (e) => {
+        speed = parseInt(e.target.value);
+    });
+    
+    threadConfig.addEventListener('change', onConfigChange);
+    dataConfig.addEventListener('change', onConfigChange);
+    repeatConfig.addEventListener('change', onConfigChange);
+    showIdealLine.addEventListener('change', updateChart);
+    maxScaleSelect.addEventListener('change', updateChart);
+    
+    // Navigation buttons
+    prevSlideToViz.addEventListener('click', () => changeSlide(1));
+    nextToConcept.addEventListener('click', () => changeSlide(3));
+    prevToExplanation.addEventListener('click', () => changeSlide(2));
+    nextToBenchmark.addEventListener('click', () => changeSlide(4));
+    prevToConcept.addEventListener('click', () => changeSlide(3));
+    runBenchmarkBtn.addEventListener('click', runFullBenchmark);
+    addCurrentResultBtn.addEventListener('click', () => {
+        updateBenchmarkData();
+        updateBenchmarkTable();
+        updateChart();
+        updateAnalysisDisplay();
+    });
+    clearBenchmarkBtn.addEventListener('click', clearAllBenchmarkData);
+    nextToChartBtn.addEventListener('click', () => changeSlide(5));
+    prevSlideBtn2.addEventListener('click', () => changeSlide(4));
+    animateChartBtn.addEventListener('click', animateChart);
+    clearChartBtn.addEventListener('click', clearChart);
+    backToVizBtn.addEventListener('click', () => changeSlide(1));
+    nextToAnalysisBtn.addEventListener('click', () => changeSlide(6));
+    nextToAnalysisBtn2.addEventListener('click', () => changeSlide(6));
+    prevToChart.addEventListener('click', () => changeSlide(5));
+    runAnalysisBtn.addEventListener('click', () => {
+        analyzeBenchmarkData();
+        updateAnalysisDisplay();
+        addLog("Analisis data benchmark dijalankan", "success");
+    });
+    backToStart.addEventListener('click', () => changeSlide(1));
+    
+    // Slide navigation dots
+    document.querySelectorAll('.slide-dot').forEach(dot => {
+        dot.addEventListener('click', (e) => {
+            const slideNumber = parseInt(e.target.dataset.slide);
+            changeSlide(slideNumber);
+        });
+    });
+    
+    // Inisialisasi saat halaman dimuat
+    window.addEventListener('DOMContentLoaded', init);
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Spacebar') {
+            if (isRunning && isAutoMode) {
+                pauseExecution();
+            } else if (!isRunning && currentSlide === 1) {
+                startExecution();
+            }
+            e.preventDefault();
+        } else if (e.key === 'ArrowRight' && currentSlide === 1) {
+            nextStep();
+        } else if (e.key === 'r' || e.key === 'R') {
+            if (e.ctrlKey) {
+                resetComplete();
+            } else {
+                resetExecution();
+            }
+        } else if (e.key === '1') {
+            changeSlide(1);
+        } else if (e.key === '2') {
+            changeSlide(2);
+        } else if (e.key === '3') {
+            changeSlide(3);
+        } else if (e.key === '4') {
+            changeSlide(4);
+        } else if (e.key === '5') {
+            changeSlide(5);
+        } else if (e.key === '6') {
+            changeSlide(6);
+        }
+    });
+</script>
+</body>
+</html>
