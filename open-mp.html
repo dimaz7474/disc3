@@ -1909,14 +1909,14 @@
                         
                         <div class="explanation-section">
                             <div class="explanation-title">
-                                <i class="fas fa-rocket"></i> Rekomendasi Implementasi
+                                <i class="fas fa-rocket"></i> Reflexy Diri Terhadap Implementasi OpenMP
                             </div>
                             <div class="explanation-content">
-                                <div class="explanation-point"><strong>1. Ukuran Data Kecil (&lt; 10,000):</strong> Gunakan 2-4 thread</div>
-                                <div class="explanation-point"><strong>2. Ukuran Data Sedang (10k - 1M):</strong> Gunakan 4-8 thread</div>
-                                <div class="explanation-point"><strong>3. Ukuran Data Besar (> 1M):</strong> Gunakan 8-12 thread</div>
-                                <div class="explanation-point"><strong>4. Always Measure:</strong> Ukur speedup untuk kasus spesifik</div>
-                                <div class="explanation-point"><strong>5. Consider NUMA:</strong> Perhatikan arsitektur memori pada multi-socket</div>
+                                <div class="explanation-point"><strong>Refleksi 1: Pemahaman tentang Batasan Paralelisasi</strong> Setelah menerapkan OpenMP dan mengukur waktu eksekusinya, saya menyadari bahwa paralelisasi tidak selalu menghasilkan percepatan yang sebanding secara linear. Hukum Amdahl mengingatkan bahwa terdapat batasan teoretis dalam peningkatan kecepatan.</div>
+<div class="explanation-point"><strong>Refleksi 2: Analisis Overhead dan Efisiensi</strong> Beberapa faktor seperti overhead pembuatan thread, false sharing, dan distribusi beban kerja yang tidak merata dapat memengaruhi hasilnya. Oleh karena itu, saya perlu lebih teliti dalam menganalisis kecepatan dan efisiensi.</div>
+<div class="explanation-point"><strong>Refleksi 3: Optimasi Berbasis Arsitektur</strong> Saya perlu mempertimbangkan jumlah thread yang optimal sesuai dengan arsitektur prosesor yang digunakan. Eksperimen dengan berbagai konfigurasi thread memberikan wawasan tentang diminishing returns.</div>
+<div class="explanation-point"><strong>Refleksi 4: Pentingnya Pengukuran Empiris</strong> Always Measure bukan sekadar saran, tapi kebutuhan. Setiap kasus spesifik memerlukan pengukuran sendiri karena banyak variabel yang mempengaruhi performa.</div>
+<div class="explanation-point"><strong>Refleksi 5: Kompleksitas Memori Paralel</strong> Consider NUMA mengajarkan bahwa arsitektur memori pada sistem multi-socket menambah lapisan kompleksitas yang perlu dipahami untuk optimasi yang efektif.</div>
                             </div>
                         </div>
                         
@@ -3756,4 +3756,5 @@
     });
 </script>
 </body>
+
 </html>
