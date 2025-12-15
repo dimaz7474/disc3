@@ -768,7 +768,7 @@
                         <div class="description">
                             <div class="concept-item">
                                 <strong>a. Loop Parallelism</strong><br>
-                                Membagi iterasi loop menjadi beberapa bagian yang dieksekusi secara bersamaan oleh thread yang berbeda.
+                                Membagi iterasi loop menjadi beberapa bagian yang dieksekusi secara bersamaan oleh thread yang berbeda untuk meningkatkan performa komputasi pada sistem multicore.
                                 <div class="code-example">
                                     <span class="code-keyword">#pragma omp parallel for</span><br>
                                     for(int i = 0; i < n; i++) {<br>
@@ -780,7 +780,7 @@
                             
                             <div class="concept-item">
                                 <strong>b. Reduction</strong><br>
-                                Operasi reduction menggabungkan hasil dari setiap thread secara otomatis dengan operator tertentu (seperti +, *, max, dll.).
+                                Operasi reduction menggabungkan hasil komputasi dari setiap thread secara otomatis dengan operator tertentu (seperti +, *, max, dll.) tanpa memerlukan mekanisme sinkronisasi manual.
                                 <div class="code-example">
                                     <span class="code-keyword">#pragma omp parallel for reduction(+:sum)</span><br>
                                     for(int i = 0; i < n; i++) {<br>
@@ -792,9 +792,10 @@
                             
                             <div class="concept-item">
                                 <strong>c. Memory Model OpenMP</strong><br>
-                                • <strong>Shared Memory:</strong> Variabel yang dideklarasikan di luar region paralel dapat diakses oleh semua thread.<br>
-                                • <strong>Private Memory:</strong> Variabel yang dideklarasikan dalam thread bersifat privat.
-                            </div>
+                                • <strong>Shared Memory:</strong> Variabel yang dideklarasikan di luar parallel region secara default dapat diakses oleh semua thread.<br>
+                                • <strong>Private Memory:</strong> Variabel yang dideklarasikan di dalam parallel region atau ditentukan dengan klausa private akan memiliki salinan tersendiri untuk setiap thread
+                            OpenMP menggunakan model memori bersama (shared memory).
+							</div>
                              <a href="https://www.openmp.org/spec-html/5.0/openmpsu9.html" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
                             <div class="concept-item">
                                 <strong>d. False Sharing & Cara Menghindarinya</strong><br>
@@ -1138,5 +1139,6 @@
 </body>
 
 </html>
+
 
 
