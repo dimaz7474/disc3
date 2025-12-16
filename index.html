@@ -701,7 +701,11 @@
                             <i class="fas fa-question-circle"></i> Kapan Menggunakan OpenMP?
                         </div>
                         <div class="description">
-                            • CPU multi-core.<br>
+                            • CPU multi-core : memanfaatkan arsitektur memori bersama (shared memory) pada CPU multi-core<br>
+								<ul>
+ 									 <li>OpenMP efektif pada sistem SMP (Symmetric Multi-Processing) atau UMA (Uniform Memory Access).</li>
+  									<li>Cocok untuk komputer desktop maupun server modern yang memiliki 2 hingga 64+ core.</li>
+								</ul>
                             • Program yang bisa diparalelisasi dengan loop-level parallelism atau task parallelism.<br>
                             • Aplikasi numerik, scientific computing, simulasi, pemrosesan data besar.
                         </div>
@@ -1139,6 +1143,7 @@
 </body>
 
 </html>
+
 
 
 
