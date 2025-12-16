@@ -873,58 +873,14 @@
 					   </div>
                     </div>
                     
-                    <div class="info-box">
+              <div class="info-box">
                         <div class="info-title">
                             <i class="fas fa-question-circle"></i> Kapan Menggunakan OpenMP?
                         </div>
                         <div class="description">
-                          <ul class="openmp-use-cases">
-            <li>
-                <strong>CPU Multi-core</strong>
-                <div class="detail">Memanfaatkan arsitektur memori bersama (shared memory) pada CPU multi-core</div>
-                <ul class="sub-list">
-                    <li>OpenMP efektif pada sistem SMP (Symmetric Multi-Processing) atau UMA (Uniform Memory Access)</li>
-                    <li>Cocok untuk komputer desktop maupun server modern yang memiliki 2 hingga 64+ core</li>
-                    <li><strong>Tidak cocok</strong> untuk distributed memory (cluster) - untuk itu gunakan MPI</li>
-                </ul>
-            </li>
-            
-            <li>
-                <strong>Program dengan Pola Paralelisme yang Jelas</strong>
-                <div class="detail">Dapat diparalelisasi dengan:</div>
-                <ul class="sub-list">
-                    <li>Loop-level parallelism (iterasi independen dalam loop besar)</li>
-                    <li>Task parallelism (tugas-tugas independen yang dapat dieksekusi bersamaan)</li>
-                </ul>
-            </li>
-							   <li>
-                <strong>Shared Memory Architecture</strong>
-                <div class="detail">OpenMP HANYA bekerja pada sistem dengan memori bersama</div>
-                <ul class="sub-list">
-                    <li>Semua core mengakses memori fisik yang sama</li>
-                    <li>Tidak cocok untuk komputer cluster (GPU/FPGA butuh pendekatan berbeda)</li>
-                    <li>Contoh cocok: Workstation, server multi-core, supercomputer node tunggal</li>
-                </ul>
-            </li>
-
-            <li>
-                <strong>Memiliki Bagian yang "Parallelizable"</strong>
-                <div class="detail">Program harus memiliki bagian yang bisa dijalankan secara bersamaan</div>
-                <div class="parallelizable-grid">
-                    <div class="parallel-good">
-                        <h5>✅ Parallelizable:</h5>
-                        <ul>
-                            <li>Perhitungan matriks</li>
-                            <li>Simulasi Monte Carlo</li>
-                            <li>Rendering</li>
-                        </ul>
-                    </div>
-                    <div class="parallel-bad">
-                        <h5>❌ Tidak Parallelizable:</h5>
-                        <ul>
-                            <li>Operasi I/O bound</li>
-                            <li>Kode yang sangat sequential</li>
-                        </ul>
+                            • CPU multi-core.<br>
+                            • Program yang bisa diparalelisasi dengan loop-level parallelism atau task parallelism.<br>
+                            • Aplikasi numerik, scientific computing, simulasi, pemrosesan data besar.
                         </div>
                     </div>
                     
@@ -1360,6 +1316,7 @@
 </body>
 
 </html>
+
 
 
 
