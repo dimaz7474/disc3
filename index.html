@@ -873,16 +873,39 @@
 					   </div>
                     </div>
                     
-              <div class="info-box">
-                        <div class="info-title">
-                            <i class="fas fa-question-circle"></i> Kapan Menggunakan OpenMP?
-                        </div>
-                        <div class="description">
-                            • CPU multi-core.<br>
-                            • Program yang bisa diparalelisasi dengan loop-level parallelism atau task parallelism.<br>
-                            • Aplikasi numerik, scientific computing, simulasi, pemrosesan data besar.
-                        </div>
-                    </div>
+            <div class="info-box">
+    <div class="info-title">
+        <i class="fas fa-question-circle"></i> Kapan Menggunakan OpenMP?
+    </div>
+    <div class="description">
+        • <strong>CPU multi-core</strong> dengan arsitektur shared-memory<br>
+        • Program yang bisa diparalelisasi dengan <strong>loop-level parallelism</strong> atau <strong>task parallelism</strong><br>
+        • Aplikasi numerik, scientific computing, simulasi, pemrosesan data besar<br>
+        • <strong>Shared Memory Architecture</strong> - OpenMP HANYA bekerja pada sistem dengan memori bersama:<br>
+        &nbsp;&nbsp;∘ Semua core mengakses memori fisik yang sama<br>
+        &nbsp;&nbsp;∘ Tidak cocok untuk komputer cluster (GPU/FPGA butuh pendekatan berbeda)<br>
+        &nbsp;&nbsp;∘ Contoh cocok: Workstation, server multi-core, supercomputer node tunggal<br>
+        • <strong>Memiliki bagian yang "Parallelizable"</strong>:<br>
+        &nbsp;&nbsp;∘ <em>Parallelizable</em>: Perhitungan matriks, simulasi Monte Carlo, rendering<br>
+        &nbsp;&nbsp;∘ <em>Tidak parallelizable</em>: Operasi I/O bound, kode yang sangat sequential<br>
+        • <strong>Overhead Parallelisme Masih Terbayarkan</strong> - Hindari OpenMP jika:<br>
+        &nbsp;&nbsp;∘ Loop terlalu kecil (overhead > benefit)<br>
+        &nbsp;&nbsp;∘ Operasi I/O bound (bukan CPU bound)<br>
+        
+        <div class="code-example" style="margin-top: 15px;">
+            <span class="code-comment">// ❌ JANGAN gunakan OpenMP jika:</span><br>
+            <span class="code-comment">// 1. Loop terlalu kecil (overhead > benefit)</span><br>
+            <span class="code-keyword">#pragma omp parallel for</span>  <span class="code-comment">// SALAH untuk n kecil!</span><br>
+            for(int i = 0; i < 10; i++) { ... }<br><br>
+            
+            <span class="code-comment">// 2. I/O bound (bukan CPU bound)</span><br>
+            <span class="code-keyword">#pragma omp parallel for</span>  <span class="code-comment">// SALAH!</span><br>
+            for(int i = 0; i < n; i++) {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;fprintf(file, "%d\n", i);  <span class="code-comment">// Terlalu banyak I/O</span><br>
+            }
+        </div>
+    </div>
+</div>
                     
                     <!-- Bagian Aplikasi OpenMP dengan Gambar -->
                     <div class="openmp-applications">
@@ -1316,6 +1339,7 @@
 </body>
 
 </html>
+
 
 
 
