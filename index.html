@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualisasi Parallel Programming - OpenMP | Kelompok 6</title>
+    <title>Visualisasi Parallel Programming - Implementasi OpenMP | Kelompok 6</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -675,7 +675,7 @@
             </div>
             
             <h1><i class="fas fa-microchip"></i> Visualisasi Parallel Programming</h1>
-            <h2>Parallel Sum Reduction dengan OpenMP</h2>
+            <h2>Parallel Sum Reduction dengan Implementasi OpenMP</h2>
             <p>Visualisasi interaktif yang menunjukkan bagaimana parallel reduction bekerja dengan OpenMP, lengkap dengan log langkah-demi-langkah dan benchmark dinamis untuk berbagai konfigurasi thread.</p>
         </div>
         
@@ -692,7 +692,7 @@
                         </div>
                         <div class="description">
                           <p align="justify">  OpenMP adalah sebuah API yang mendukung pemrograman paralel berbasis shared-memory pada bahasa C/C++ dan Fortran. OpenMP adalah akronim untuk Open Multi-Processing. Merupakan Antarmuka Pemrograman Aplikasi (API) berbasis arahan untuk mengembangkan program paralel pada arsitektur memori bersama. Standar OpenMP dikelola oleh OpenMP ARB, sebuah perusahaan yang dewan direksinya terdiri dari perwakilan dari berbagai vendor perangkat keras dan perangkat lunak komputer terkemuka.
-						  </p> <br><a href="https://cvw.cac.cornell.edu/openmp/intro/what-is-openmp?" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
+						  </p> <br><a href="https://cvw.cac.cornell.edu/openmp/intro/what-is-openmp?" target="_blank" style="color:#F54927;"><em>Link Referensi : Cornell University: What is OpenMP</em></a>
 					   </div>
                     </div>
                     
@@ -757,8 +757,8 @@
                                 </div>
                             </div>
                         </div>
-					<p align="Justify">OpenMP bekerja berdasarkan tiga komponen utama, yaitu compiler directives, library routines, dan environment variables. Compiler directives digunakan untuk menandai bagian kode yang akan dieksekusi secara paralel. Library routines menyediakan fungsi untuk mengatur serta memperoleh informasi mengenai eksekusi thread. Environment variables memungkinkan pengguna mengontrol perilaku eksekusi OpenMP pada saat runtime, seperti menentukan jumlah thread yang digunakan</p>
-                   	<a href="https://hpc-tutorials.llnl.gov/openmp/api_overview/" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
+					
+                   	<a href="https://hpc-tutorials.llnl.gov/openmp/api_overview/" target="_blank" style="color:#F54927;"><em>Link Referensi : LLNL: OpenMP API Overview</em></a>
                     </div>
                     
                     <div class="info-box">
@@ -775,7 +775,7 @@
                                     &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// kode paralel</span><br>
                                     }
                                 </div>
-                            	<a href="https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/2023-0/worksharing-using-openmp.html?" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
+                            	<a href="https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/2023-0/worksharing-using-openmp.html?" target="_blank" style="color:#F54927;"><em>Link Referensi : Intel: Worksharing using OpenMP</em></a>
                             </div>
                             
                             <div class="concept-item">
@@ -787,7 +787,7 @@
                                     &nbsp;&nbsp;&nbsp;&nbsp;sum += data[i];<br>
                                     }
                                 </div>
-                            	<a href="https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/2023-0/worksharing-using-openmp.html" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
+                            	<a href="https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/2023-0/worksharing-using-openmp.html" target="_blank" style="color:#F54927;"><em>Link Referensi : Intel: Worksharing using OpenMP</em></a>
                             </div>
                             
                             <div class="concept-item">
@@ -796,7 +796,7 @@
                                 • <strong>Private Memory:</strong> Variabel yang dideklarasikan di dalam parallel region atau ditentukan dengan klausa private akan memiliki salinan tersendiri untuk setiap thread
                             <br>OpenMP menggunakan model memori bersama (shared memory).
 							</div>
-                             <a href="https://www.openmp.org/spec-html/5.0/openmpsu9.html" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
+                             <a href="https://www.openmp.org/spec-html/5.0/openmpsu9.html" target="_blank" style="color:#F54927;"><em>Link Referensi : OpenMP Specification</em></a>
                             <div class="concept-item">
                                 <strong>d. False Sharing & Cara Menghindarinya</strong><br>
                                 False sharing terjadi ketika thread-thread yang berbeda mengakses variabel yang berbeda tetapi berada dalam cache line yang sama, menyebabkan penurunan kinerja.<br><br>
@@ -805,7 +805,7 @@
                                 • Menggunakan local variable dalam thread sebelum menggabungkannya.<br>
                                 • Mengatur alignment data.
                             </div>
-							<a href="https://docs.oracle.com/cd/E24457_01/html/E21996/aewcx.html" target="_blank" style="color:#F54927;"><em>Link Referensi</em></a>
+							<a href="https://docs.oracle.com/cd/E24457_01/html/E21996/aewcx.html" target="_blank" style="color:#F54927;"><em>Link Referensi : Oracle: False Sharing</em></a>
                         </div>
                     </div>
                 </div>
@@ -1139,6 +1139,7 @@
 </body>
 
 </html>
+
 
 
 
