@@ -2178,10 +2178,11 @@
     
     // Hitung waktu sequential
     function calculateSequentialTime() {
-        const baseTimePerElement = 0.00000345;
-        let sequentialTime = (baseTimePerElement * ACTUAL_N * 1000);
-        sequentialTime = sequentialTime * REPEAT_COUNT;
-        return Math.max(sequentialTime.toFixed(2), 0.1);
+         const baseTimePerElement = 0.00000345; // 3.45 nanodetik per elemen
+    // HAPUS * 1000
+    let sequentialTime = (baseTimePerElement * ACTUAL_N); // dalam ms
+    sequentialTime = sequentialTime * REPEAT_COUNT;
+    return Math.max(sequentialTime.toFixed(2), 0.1);
     }
     
     // Hitung waktu parallel
@@ -3758,4 +3759,5 @@
 </body>
 
 </html>
+
 
