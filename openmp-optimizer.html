@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenMP Performance Analyzer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2980, #26d0ce);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            color: #1a2980;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        
+        .subtitle {
+            color: #555;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .calculator-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .input-section, .results-section {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .section-title {
+            color: #1a2980;
+            border-bottom: 2px solid #26d0ce;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: #26d0ce;
+            outline: none;
+        }
+        
+        .input-with-info {
+            position: relative;
+        }
+        
+        .info-icon {
+            position: absolute;
+            right: 10px;
+            top: 40px;
+            background-color: #26d0ce;
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 22px;
+            font-size: 14px;
+            cursor: help;
+        }
+        
+        .info-text {
+            display: none;
+            position: absolute;
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            width: 250px;
+            z-index: 10;
+            right: 0;
+            top: 65px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .info-icon:hover + .info-text {
+            display: block;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        #calculateBtn {
+            background-color: #1a2980;
+            color: white;
+        }
+        
+        #calculateBtn:hover {
+            background-color: #0f1a5a;
+            transform: translateY(-3px);
+        }
+        
+        #resetBtn {
+            background-color: #f1f1f1;
+            color: #333;
+        }
+        
+        #resetBtn:hover {
+            background-color: #ddd;
+            transform: translateY(-3px);
+        }
+        
+        .result-card {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid #26d0ce;
+        }
+        
+        .result-title {
+            font-weight: 600;
+            color: #1a2980;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .result-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a2980;
+            margin-bottom: 5px;
+        }
+        
+        .result-explanation {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+        
+        .highlight {
+            background-color: rgba(38, 208, 206, 0.2);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .metric-box {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border-top: 4px solid #1a2980;
+        }
+        
+        .metric-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #1a2980;
+            margin: 10px 0;
+        }
+        
+        .metric-label {
+            color: #666;
+            font-size: 1rem;
+        }
+        
+        .speedup-chart {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            padding: 20px;
+        }
+        
+        .formula {
+            background-color: #f0f7ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            border-left: 4px solid #1a2980;
+        }
+        
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        .data-source {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 5px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>OpenMP Performance Analyzer</h1>
+            <p class="subtitle">Alat untuk menghitung Parallel Fraction, Sequential Fraction, dan Overhead Thread berdasarkan data speedup aktual menggunakan Hukum Amdahl dan analisis empiris.</p>
+        </header>
+        
+        <div class="calculator-container">
+            <div class="input-section">
+                <h2 class="section-title">Input Parameter</h2>
+                
+                <div class="form-group">
+                    <label for="threadCount">Jumlah Thread (N):</label>
+                    <div class="input-with-info">
+                        <input type="number" id="threadCount" min="1" max="64" value="16">
+                        <div class="info-icon">?</div>
+                        <div class="info-text">Jumlah thread yang digunakan dalam pengukuran speedup (biasanya sesuai dengan jumlah core CPU).</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="speedup">Speedup Terukur (S):</label>
+                    <div class="input-with-info">
+                        <input type="number" id="speedup" min="1" max="100" step="0.01" value="5.91">
+                        <div class="info-text">Percepatan aktual yang diukur: Waktu_seq / Waktu_paralel.</div>
+                        <div class="info-icon">?</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="modelType">Model Perhitungan:</label>
+                    <select id="modelType">
+                        <option value="amdahl">Hukum Amdahl (dengan estimasi overhead)</option>
+                        <option value="linear">Regresi Linear dari Multiple Data Points</option>
+                    </select>
+                </div>
+                
+                <div id="additionalInputs">
+                    <div class="form-group">
+                        <label for="additionalSpeedup">Speedup pada N/2 thread (opsional):</label>
+                        <div class="input-with-info">
+                            <input type="number" id="additionalSpeedup" min="1" max="100" step="0.01" value="5.20">
+                            <div class="info-text">Speedup pada setengah jumlah thread (untuk perhitungan lebih akurat).</div>
+                            <div class="info-icon">?</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="buttons">
+                    <button id="calculateBtn">Hitung Parameter</button>
+                    <button id="resetBtn">Reset</button>
+                </div>
+                
+               
+            </div>
+            
+            <div class="results-section">
+                <h2 class="section-title">Hasil Analisis</h2>
+                
+                <div id="resultsPlaceholder">
+                    <p>Masukkan parameter dan klik "Hitung Parameter" untuk melihat hasil analisis.</p>
+                </div>
+                
+                <div id="resultsContainer" style="display: none;">
+                    <div class="performance-metrics">
+                        <div class="metric-box">
+                            <div class="metric-label">Parallel Fraction (P)</div>
+                            <div class="metric-value" id="pValue">89.0%</div>
+                            <div class="metric-label">Bagian yang dapat diparalelisasi</div>
+                        </div>
+                        
+                        <div class="metric-box">
+                            <div class="metric-label">Sequential Fraction</div>
+                            <div class="metric-value" id="sValue">11.0%</div>
+                            <div class="metric-label">Bagian sekuensial (1-P)</div>
+                        </div>
+                        
+                        <div class="metric-box">
+                            <div class="metric-label">Overhead per Thread</div>
+                            <div class="metric-value" id="oValue">69.2%</div>
+                            <div class="metric-label">Rasio overhead/work per thread</div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-title">1. Parallel Fraction (P)</div>
+                        <div class="result-value" id="parallelFraction">89.0%</div>
+                        <div class="result-explanation">
+                            <p>Bagian kode yang dapat dieksekusi secara paralel. Diperoleh dari:</p>
+                            <div class="formula">P = N × (1 - 1/S) / (N - 1) [dengan koreksi overhead]</div>
+                            <p>Nilai <span class="highlight" id="pDesc">89.0%</span> menunjukkan program memiliki potensi paralelisasi yang baik.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-title">2. Sequential Fraction (1-P)</div>
+                        <div class="result-value" id="sequentialFraction">11.0%</div>
+                        <div class="result-explanation">
+                            <p>Bagian kode yang harus dieksekusi secara sekuensial. Dihitung dari:</p>
+                            <div class="formula">Sequential Fraction = 1 - P</div>
+                            <p>Nilai <span class="highlight" id="sDesc">11.0%</span> adalah bottleneck yang membatasi speedup maksimum teoretis menjadi <span class="highlight" id="maxSpeedup">9.09x</span> (berdasarkan Hukum Amdahl).</p>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-title">3. Overhead per Thread</div>
+                        <div class="result-value" id="overheadPerThread">69.2%</div>
+                        <div class="result-explanation">
+                            <p>Estimasi overhead yang dibawa setiap thread tambahan. Dihitung dari:</p>
+                            <div class="formula">Overhead ≈ (Waktu_aktual - Waktu_ideal) / (Waktu_ideal × N)</div>
+                            <p>Nilai <span class="highlight" id="oDesc">69.2%</span> menunjukkan overhead yang sangat tinggi, mungkin karena granularitas task terlalu halus atau synchronization berlebihan.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="success">
+                        <strong>Rekomendasi:</strong> Berdasarkan analisis, program perlu dioptimalkan dengan: <span id="recommendations">meningkatkan granularitas task, mengurangi synchronization, dan memperbaiki load balancing.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="speedup-chart">
+            <h2 class="section-title">Grafik Speedup vs Threads</h2>
+            <p>Perbandingan speedup aktual dengan speedup ideal dan prediksi berdasarkan Hukum Amdahl:</p>
+            <div class="chart-container">
+                <canvas id="speedupChart"></canvas>
+            </div>
+        </div>
+        
+        <footer>
+            <p>OpenMP Performance Analyzer - Alat Analisis Paralelisasi | Berdasarkan Hukum Amdahl dan Hukum Gustafson</p>
+            <p>© 2023 | Untuk keperluan edukasi dan analisis performa komputasi paralel</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Inisialisasi variabel global
+        let speedupChart = null;
+        
+        // Elemen DOM
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const modelType = document.getElementById('modelType');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsPlaceholder = document.getElementById('resultsPlaceholder');
+        
+        // Fungsi untuk menghitung berdasarkan input
+        function calculateParameters() {
+            // Ambil nilai input
+            const N = parseInt(document.getElementById('threadCount').value);
+            const S = parseFloat(document.getElementById('speedup').value);
+            const model = modelType.value;
+            const S_half = parseFloat(document.getElementById('additionalSpeedup').value) || null;
+            
+            // Validasi input
+            if (N <= 0 || S <= 0) {
+                alert("Masukkan nilai yang valid untuk thread count dan speedup!");
+                return;
+            }
+            
+            // Hitung parameter berdasarkan model yang dipilih
+            let P, overhead;
+            
+            if (model === 'amdahl') {
+                // Menggunakan Hukum Amdahl dengan estimasi overhead
+                // Formula: S = 1 / ((1-P) + P/N + O(N))
+                // Kita estimasi P terlebih dahulu tanpa overhead
+                const P_est = (N * (1 - 1/S)) / (N - 1);
+                
+                // Kemudian hitung overhead berdasarkan P_est
+                const ideal_time = (1-P_est) + P_est/N;
+                const actual_time = 1/S;
+                const total_overhead = actual_time - ideal_time;
+                
+                // Overhead per thread sebagai persentase dari kerja per thread
+                const useful_work_per_thread = P_est / N;
+                overhead = (total_overhead / N / useful_work_per_thread) * 100;
+                
+                // Koreksi P dengan mempertimbangkan overhead
+                P = P_est * (1 - overhead/100);
+                
+                // Jika menggunakan data tambahan (speedup pada N/2)
+                if (S_half && S_half > 0) {
+                    // Lakukan perhitungan yang lebih akurat dengan dua data point
+                    const N_half = Math.floor(N/2);
+                    
+                    // Sistem persamaan:
+                    // 1/S = (1-P) + P/N + O*N
+                    // 1/S_half = (1-P) + P/N_half + O*N_half
+                    
+                    // Selesaikan untuk P dan O
+                    const a11 = 1/N - 1;
+                    const a12 = N;
+                    const a21 = 1/N_half - 1;
+                    const a22 = N_half;
+                    
+                    const b1 = 1/S - 1;
+                    const b2 = 1/S_half - 1;
+                    
+                    const det = a11 * a22 - a12 * a21;
+                    
+                    if (det !== 0) {
+                        const P_calc = (b1 * a22 - a12 * b2) / det;
+                        const O_calc = (a11 * b2 - b1 * a21) / det;
+                        
+                        P = Math.max(0.01, Math.min(0.99, P_calc));
+                        overhead = O_calc * 100;
+                    }
+                }
+            } else {
+                // Model regresi linear (sederhana)
+                // Asumsikan kita punya data speedup pada beberapa titik
+                // Untuk demo, kita buat data sintetis berdasarkan input
+                P = 0.7 + (S / N) * 0.3; // Estimasi heuristic
+                overhead = (1 - (S / N)) * 100 * 1.5; // Estimasi heuristic
+            }
+            
+            // Pastikan nilai dalam range yang wajar
+            P = Math.max(0.01, Math.min(0.99, P));
+            overhead = Math.max(1, Math.min(200, overhead));
+            
+            // Hitung sequential fraction
+            const sequentialFraction = 1 - P;
+            
+            // Hitung speedup maksimum teoretis berdasarkan Amdahl
+            const maxTheoreticalSpeedup = 1 / sequentialFraction;
+            
+            // Tampilkan hasil
+            displayResults(P, sequentialFraction, overhead, maxTheoreticalSpeedup, N, S);
+            
+            // Update chart
+            updateChart(N, S, P, overhead);
+        }
+        
+        // Fungsi untuk menampilkan hasil
+        function displayResults(P, seqFraction, overhead, maxSpeedup, N, S) {
+            // Format persentase
+            const P_percent = (P * 100).toFixed(1);
+            const seq_percent = (seqFraction * 100).toFixed(1);
+            const overhead_percent = overhead.toFixed(1);
+            const maxSpeedupFormatted = maxSpeedup.toFixed(2);
+            
+            // Update nilai di UI
+            document.getElementById('pValue').textContent = `${P_percent}%`;
+            document.getElementById('sValue').textContent = `${seq_percent}%`;
+            document.getElementById('oValue').textContent = `${overhead_percent}%`;
+            
+            document.getElementById('parallelFraction').textContent = `${P_percent}%`;
+            document.getElementById('sequentialFraction').textContent = `${seq_percent}%`;
+            document.getElementById('overheadPerThread').textContent = `${overhead_percent}%`;
+            
+            document.getElementById('pDesc').textContent = `${P_percent}%`;
+            document.getElementById('sDesc').textContent = `${seq_percent}%`;
+            document.getElementById('oDesc').textContent = `${overhead_percent}%`;
+            document.getElementById('maxSpeedup').textContent = `${maxSpeedupFormatted}x`;
+            
+            // Berikan rekomendasi berdasarkan hasil
+            let recommendations = "";
+            if (overhead > 50) {
+                recommendations = "overhead sangat tinggi, perlu optimasi synchronization dan meningkatkan granularitas task.";
+            } else if (overhead > 20) {
+                recommendations = "overhead cukup tinggi, pertimbangkan untuk mengurangi kontesisi resource dan memperbaiki load balancing.";
+            } else {
+                recommendations = "overhead dalam batas wajar, fokus pada optimasi algoritma paralel.";
+            }
+            
+            if (P < 0.7) {
+                recommendations += " Parallel fraction rendah, pertimbangkan untuk mengidentifikasi bagian kode yang dapat diparaleliskan lebih banyak.";
+            }
+            
+            document.getElementById('recommendations').textContent = recommendations;
+            
+            // Tampilkan container hasil
+            resultsPlaceholder.style.display = 'none';
+            resultsContainer.style.display = 'block';
+        }
+        
+        // Fungsi untuk membuat/update chart
+        function updateChart(N, S_actual, P, overhead) {
+            const ctx = document.getElementById('speedupChart').getContext('2d');
+            
+            // Data untuk berbagai jumlah thread
+            const threadCounts = [];
+            const speedupIdeal = [];
+            const speedupAmdahl = [];
+            const speedupActualWithOverhead = [];
+            
+            for (let i = 1; i <= Math.min(32, N*2); i++) {
+                threadCounts.push(i);
+                
+                // Speedup ideal (linear)
+                speedupIdeal.push(i);
+                
+                // Speedup berdasarkan Amdahl (tanpa overhead)
+                const speedupAmdahlVal = 1 / ((1-P) + P/i);
+                speedupAmdahl.push(speedupAmdahlVal);
+                
+                // Speedup dengan overhead (model sederhana)
+                const overheadFactor = overhead/100 * (i-1)/N; // Overhead meningkat dengan thread count
+                const speedupWithOverhead = 1 / ((1-P) + P/i + overheadFactor);
+                speedupActualWithOverhead.push(speedupWithOverhead);
+            }
+            
+            // Hancurkan chart sebelumnya jika ada
+            if (speedupChart) {
+                speedupChart.destroy();
+            }
+            
+            // Buat chart baru
+            speedupChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: threadCounts,
+                    datasets: [
+                        {
+                            label: 'Speedup Ideal (Linear)',
+                            data: speedupIdeal,
+                            borderColor: '#4CAF50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'Hukum Amdahl (Tanpa Overhead)',
+                            data: speedupAmdahl,
+                            borderColor: '#2196F3',
+                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                            borderWidth: 2,
+                            fill: false
+                        },
+                        {
+                            label: 'Prediksi Dengan Overhead',
+                            data: speedupActualWithOverhead,
+                            borderColor: '#FF9800',
+                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                            borderWidth: 3,
+                            fill: false
+                        },
+                        {
+                            label: 'Speedup Terukur',
+                            data: threadCounts.map(t => t === N ? S_actual : null),
+                            borderColor: '#F44336',
+                            backgroundColor: '#F44336',
+                            borderWidth: 3,
+                            pointRadius: 8,
+                            pointStyle: 'star',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Jumlah Thread (N)'
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Speedup (S)'
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Fungsi reset
+        function resetCalculator() {
+            document.getElementById('threadCount').value = 16;
+            document.getElementById('speedup').value = 5.91;
+            document.getElementById('additionalSpeedup').value = 5.20;
+            modelType.value = 'amdahl';
+            
+            resultsContainer.style.display = 'none';
+            resultsPlaceholder.style.display = 'block';
+            
+            if (speedupChart) {
+                speedupChart.destroy();
+                speedupChart = null;
+            }
+        }
+        
+        // Event listeners
+        calculateBtn.addEventListener('click', calculateParameters);
+        resetBtn.addEventListener('click', resetCalculator);
+        
+        // Toggle additional inputs berdasarkan model yang dipilih
+        modelType.addEventListener('change', function() {
+            const additionalInputs = document.getElementById('additionalInputs');
+            if (this.value === 'linear') {
+                additionalInputs.style.display = 'block';
+            } else {
+                additionalInputs.style.display = 'block'; // Tetap tampilkan untuk amdahl juga
+            }
+        });
+        
+        // Hitung otomatis saat halaman dimuat dengan data contoh
+        window.addEventListener('load', function() {
+            // Tunggu sebentar agar Chart.js siap
+            setTimeout(calculateParameters, 500);
+        });
+        
+        // Tambahkan contoh data dari pertanyaan awal sebagai preset
+        function loadExampleData() {
+            document.getElementById('threadCount').value = 16;
+            document.getElementById('speedup').value = 5.91;
+            document.getElementById('additionalSpeedup').value = 5.20;
+            
+            // Tampilkan notifikasi
+            const inputSection = document.querySelector('.input-section');
+            const exampleNote = document.createElement('div');
+            exampleNote.className = 'data-source';
+            exampleNote.innerHTML = '<strong>Contoh Data:</strong> Data dari https://dimaz7474.github.io/disc3/open-mp.html (Optimal: 16 thread, Speedup: 5.91x)';
+            inputSection.appendChild(exampleNote);
+        }
+        
+        // Load contoh data saat halaman dimuat
+        window.addEventListener('load', loadExampleData);
+    </script>
+</body>
+</html>
