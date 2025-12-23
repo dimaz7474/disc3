@@ -1899,7 +1899,10 @@
                                         <div style="font-size: 12px; color: #a3b7ff;">Sequential Fraction</div>
                                         <div style="font-size: 24px; color: #ff7f50;" id="sequentialFraction">5%</div>
                                     </div>
-                                   
+                                    <div style="flex: 1; min-width: 150px; background: rgba(255, 209, 102, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #ffd166;">
+                                        <div style="font-size: 12px; color: #a3b7ff;">Overhead per Thread</div>
+                                        <div style="font-size: 24px; color: #ffd166;" id="threadOverhead">1.5%</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1974,7 +1977,7 @@
     let analysisData = {
         parallelFraction: 0.95,
         sequentialFraction: 0.05,
-        overheadPerThread: 0.015,
+        overheadPerThread: 1.5, // Langsung dalam PERSEN
         optimalThreads: 4,
         bestSpeedup: 0,
         maxEfficiency: 0
@@ -2049,7 +2052,6 @@
     const nextToConcept = document.getElementById('nextToConcept');
     const prevToExplanation = document.getElementById('prevToExplanation');
     const nextToBenchmark = document.getElementById('nextToBenchmark');
-    const prevToConcept = document.getElementById('prevToConcept');
     const runBenchmarkBtn = document.getElementById('runBenchmarkBtn');
     const addCurrentResultBtn = document.getElementById('addCurrentResultBtn');
     const clearBenchmarkBtn = document.getElementById('clearBenchmarkBtn');
@@ -2101,6 +2103,19 @@
         }
         
         return { startIdx, endIdx: Math.min(endIdx, dataSize) };
+    }
+    
+    // Fungsi untuk menghitung overhead berdasarkan Hukum Amdahl
+    function calculateOverheadWithAmdahl(singleThreadTime, actualTime, threads, parallelFraction) {
+        if (threads <= 1) return 0;
+        
+        // Waktu ideal menurut Hukum Amdahl
+        const amdahlIdealTime = singleThreadTime * ((1 - parallelFraction) + (parallelFraction / threads));
+        
+        // Overhead = (Aktual - AmdahlIdeal) / AmdahlIdeal
+        const overheadPercent = ((actualTime - amdahlIdealTime) / amdahlIdealTime) * 100;
+        
+        return Math.max(overheadPercent, 0); // Overhead minimal 0%
     }
     
     // Inisialisasi
@@ -2175,29 +2190,34 @@
     
     // Hitung waktu sequential
     function calculateSequentialTime() {
-         const baseTimePerElement = 0.00000345; // 3.45 nanodetik per elemen
-    // HAPUS * 1000
-    let sequentialTime = (baseTimePerElement * ACTUAL_N); // dalam ms
-    sequentialTime = sequentialTime * REPEAT_COUNT;
-    return Math.max(sequentialTime.toFixed(2), 0.1);
+        const baseTimePerElement = 0.00000345; // 3.45 nanodetik per elemen
+        let sequentialTime = (baseTimePerElement * ACTUAL_N); // dalam ms
+        sequentialTime = sequentialTime * REPEAT_COUNT;
+        return Math.max(sequentialTime.toFixed(2), 0.1);
     }
     
-    // Hitung waktu parallel
+    // Fungsi calculateParallelTime() yang diperbaiki
     function calculateParallelTime() {
         const baseSequentialTime = parseFloat(calculateSequentialTime());
         
         if (THREAD_COUNT === 1) return baseSequentialTime;
         
-        const parallelFraction = 0.95;
-        const overheadPerThread = 0.015;
+        const parallelFraction = analysisData.parallelFraction;
+        const overheadPerThreadPercent = analysisData.overheadPerThread / 100; // Konversi dari % ke desimal
         
-        const idealParallelTime = baseSequentialTime * ((1 - parallelFraction) + (parallelFraction / THREAD_COUNT));
-        const overhead = baseSequentialTime * (overheadPerThread * Math.log2(THREAD_COUNT));
+        // Waktu ideal menurut Hukum Amdahl
+        const amdahlIdealTime = baseSequentialTime * ((1 - parallelFraction) + (parallelFraction / THREAD_COUNT));
         
-        const minPossibleTime = baseSequentialTime / THREAD_COUNT;
-        const calculatedTime = Math.max(idealParallelTime + overhead, minPossibleTime);
+        // Tambahkan overhead (berdasarkan Hukum Amdahl, bukan linear ideal)
+        const overhead = amdahlIdealTime * (overheadPerThreadPercent * Math.log2(THREAD_COUNT));
         
-        return Math.max(calculatedTime.toFixed(2), 0.1);
+        // Waktu parallel dengan overhead
+        const calculatedTime = amdahlIdealTime + overhead;
+        
+        // Batas minimum: waktu parallel tidak mungkin lebih cepat dari linear ideal teoretis
+        const linearIdeal = baseSequentialTime / THREAD_COUNT;
+        
+        return Math.max(calculatedTime.toFixed(2), linearIdeal.toFixed(2), 0.1);
     }
     
     // Update langkah-langkah
@@ -2620,21 +2640,22 @@
         addLog("Grafik benchmark di-animasikan", "success");
     }
     
-    // Analisis data benchmark
+    // Fungsi analyzeBenchmarkData() yang diperbaiki
     function analyzeBenchmarkData() {
         if (benchmarkData.length === 0) {
             addLog("Tidak ada data benchmark untuk dianalisis", "warning");
             return;
         }
-        
+
         const currentConfigData = benchmarkData.filter(item => 
             item.dataSize === ACTUAL_N && item.repeat === REPEAT_COUNT
         );
+        
         if (currentConfigData.length < 2) {
             addLog("Data benchmark tidak cukup untuk analisis", "warning");
             return;
         }
-        
+
         const data = currentConfigData;
         
         let bestSpeedup = 0;
@@ -2651,6 +2672,7 @@
             }
         });
         
+        // Hitung parallel fraction (p) terbaik berdasarkan data
         let bestP = 0.95;
         let minError = Infinity;
         
@@ -2676,38 +2698,50 @@
             }
         }
         
-        let totalOverhead = 0;
-        let overheadCount = 0;
+        // Perhitungan overhead berdasarkan Hukum Amdahl
+        addLog("=== ANALISIS OVERHEAD (Hukum Amdahl) ===", "warning");
+        
+        let totalCorrectOverhead = 0;
+        let correctOverheadCount = 0;
         
         data.forEach(item => {
             if (item.threads > 1) {
-                const singleThreadTime = data.find(d => d.threads === 1)?.time || item.time * item.threads;
-                const idealTime = singleThreadTime / item.threads;
-                const overhead = ((item.time - idealTime) / idealTime) * 100;
-                totalOverhead += overhead;
-                overheadCount++;
+                const singleThreadTime = data.find(d => d.threads === 1)?.time;
+                if (singleThreadTime) {
+                    // Perhitungan yang benar dengan Hukum Amdahl
+                    const amdahlIdealTime = singleThreadTime * ((1 - bestP) + (bestP / item.threads));
+                    const correctOverhead = ((item.time - amdahlIdealTime) / amdahlIdealTime) * 100;
+                    
+                    totalCorrectOverhead += correctOverhead;
+                    correctOverheadCount++;
+                }
             }
         });
         
-        const avgOverhead = overheadCount > 0 ? (totalOverhead / overheadCount) : 1.5;
+        const avgCorrectOverhead = correctOverheadCount > 0 ? 
+            (totalCorrectOverhead / correctOverheadCount) : 1.5;
         
+        // Simpan hasil analisis
         analysisData = {
             parallelFraction: bestP,
             sequentialFraction: 1 - bestP,
-            overheadPerThread: avgOverhead / 100,
+            overheadPerThread: avgCorrectOverhead, // dalam persen
             optimalThreads: optimalThreads,
             bestSpeedup: bestSpeedup.toFixed(2),
             maxEfficiency: bestEfficiency.toFixed(1)
         };
         
-        updateAnalysisDisplay();
+        // Update perhitungan waktu dengan parameter baru
+        calculateExecutionTimes();
         
-        addLog("=== ANALISIS DATA BENCHMARK ===", "warning");
+        addLog("=== ANALISIS DATA BENCHMARK SELESAI ===", "success");
         addLog(`Parallel Fraction (p): ${(bestP * 100).toFixed(1)}%`, "info");
         addLog(`Sequential Fraction (1-p): ${((1 - bestP) * 100).toFixed(1)}%`, "info");
         addLog(`Thread Optimal: ${optimalThreads} (Speedup: ${bestSpeedup.toFixed(2)}x)`, "success");
         addLog(`Efisiensi Maksimal: ${bestEfficiency.toFixed(1)}%`, "success");
+        addLog(`Overhead per Thread (rata-rata): ${avgCorrectOverhead.toFixed(1)}%`, "warning");
         
+        // Analisis diminishing returns
         const data16 = data.find(item => item.threads === 16);
         const data8 = data.find(item => item.threads === 8);
         const data4 = data.find(item => item.threads === 4);
@@ -2726,11 +2760,12 @@
         }
     }
     
-    // Update tampilan analisis
+    // Fungsi updateAnalysisDisplay() yang diperbaiki
     function updateAnalysisDisplay() {
+        // Update UI dengan data analisis terbaru
         parallelFraction.textContent = `${(analysisData.parallelFraction * 100).toFixed(1)}%`;
         sequentialFraction.textContent = `${(analysisData.sequentialFraction * 100).toFixed(1)}%`;
-        threadOverhead.textContent = `${(analysisData.overheadPerThread * 100).toFixed(1)}%`;
+        threadOverhead.textContent = `${analysisData.overheadPerThread.toFixed(1)}%`;
         optimalThreads.textContent = `${analysisData.optimalThreads} threads`;
         bestSpeedup.textContent = `${analysisData.bestSpeedup}x`;
         maxEfficiency.textContent = `${analysisData.maxEfficiency}%`;
@@ -2749,50 +2784,22 @@
                 item.dataSize === ACTUAL_N && item.repeat === REPEAT_COUNT
             );
             
-            let analysisHTML = '<div class="thread-comparison">';
-            
-            currentConfigData.forEach(item => {
-                const isBest = item.threads === analysisData.optimalThreads;
-                const isWorst = item.threads === 16 && item.efficiency < 50;
-                
-                analysisHTML += `
-                    <div class="thread-card ${isBest ? 'best' : ''} ${isWorst ? 'worst' : ''}">
-                        <div class="thread-count-card">${item.threads} Thread${item.threads > 1 ? 's' : ''}</div>
-                        <div class="thread-performance">
-                            <div>Speedup: <strong>${item.speedup.toFixed(2)}x</strong></div>
-                            <div>Efisiensi: <strong>${item.efficiency.toFixed(1)}%</strong></div>
-                            <div style="font-size: 12px; margin-top: 5px;">${isBest ? '⭐ Optimal' : isWorst ? '⚠️ Diminishing' : ''}</div>
-                        </div>
+            // Tampilkan info overhead yang diperbaiki
+            const overheadInfo = `
+                <div class="highlight-box" style="margin-top: 15px; background: rgba(255, 209, 102, 0.1); border-color: #ffd166;">
+                    <div class="explanation-title" style="color: #ffd166;">
+                        <i class="fas fa-calculator"></i> Informasi Overhead (Perhitungan Baru)
                     </div>
-                `;
-            });
-            
-            analysisHTML += '</div>';
-            
-            const data16 = currentConfigData.find(item => item.threads === 16);
-            const data8 = currentConfigData.find(item => item.threads === 8);
-            
-            if (data16 && data8) {
-                const efficiencyDrop = data8.efficiency - data16.efficiency;
-                const speedupGain = data16.speedup - data8.speedup;
-                const relativeGain = (speedupGain / data8.speedup * 100).toFixed(1);
-                
-                analysisHTML += `
-                    <div class="highlight-box" style="margin-top: 15px; background: rgba(255, 126, 80, 0.1); border-color: #ff7f50;">
-                        <div class="explanation-title" style="color: #ff7f50;">
-                            <i class="fas fa-exclamation-triangle"></i> Analisis 16 Thread
-                        </div>
-                        <div class="explanation-content">
-                            • Penambahan dari 8→16 thread: <strong>+${speedupGain.toFixed(2)}x</strong> (${relativeGain}%)<br>
-                            • Penurunan efisiensi: <strong>${efficiencyDrop.toFixed(1)}%</strong><br>
-                            • Efisiensi 16 thread: <strong>${data16.efficiency.toFixed(1)}%</strong> vs Ideal 100%<br>
-                           
-                        </div>
+                    <div class="explanation-content">
+                        • Overhead dihitung berdasarkan Hukum Amdahl, bukan linear ideal<br>
+                        • Parallel Fraction (p): <strong>${(analysisData.parallelFraction * 100).toFixed(1)}%</strong><br>
+                        • Overhead per Thread: <strong>${analysisData.overheadPerThread.toFixed(1)}%</strong><br>
+                        • <em>Note: Overhead sebelumnya (69.2%) salah karena dibandingkan dengan linear ideal yang tidak mungkin dicapai</em>
                     </div>
-                `;
-            }
+                </div>
+            `;
             
-            analysisDiv.innerHTML = analysisHTML;
+            analysisDiv.innerHTML = overheadInfo;
         }
     }
     
@@ -3686,7 +3693,6 @@
     nextToConcept.addEventListener('click', () => changeSlide(3));
     prevToExplanation.addEventListener('click', () => changeSlide(2));
     nextToBenchmark.addEventListener('click', () => changeSlide(4));
-    prevToConcept.addEventListener('click', () => changeSlide(3));
     runBenchmarkBtn.addEventListener('click', runFullBenchmark);
     addCurrentResultBtn.addEventListener('click', () => {
         updateBenchmarkData();
@@ -3754,9 +3760,4 @@
     });
 </script>
 </body>
-
 </html>
-
-
-
-
